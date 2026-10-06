@@ -19,7 +19,7 @@ class NationalIncidentsRequest(BaseModel):
 
 
 class NationalIncidentTypeRequest(BaseModel):
-    indicentType: str
+    indicent_type: str
     start_date: date
     end_date: date
 
