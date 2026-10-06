@@ -7,7 +7,10 @@ from dotenv import load_dotenv
 POLICE_EVENTS_URL = "https://polisen.se/api/events"
 
 def fetch_police_events():
-    response = requests.get(POLICE_EVENTS_URL, timeout=10)
+    headers = {
+        'User-Agent': 'CrimeRadarSweden/1.0'
+    }
+    response = requests.get(POLICE_EVENTS_URL, headers=headers, timeout=10)
     response.raise_for_status()
     return response.json()
 
@@ -56,7 +59,7 @@ def save_event(conn, event):
 
 def main():
     load_dotenv()
-    database_url = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DB_URL")
 
     raw_events = fetch_police_events()
     normalized_events = [normalize_event(event) for event in raw_events]
