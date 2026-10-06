@@ -16,7 +16,7 @@ def fetch_police_events():
 
 def normalize_event(event):
     return {
-        "police_id": event["id"],
+        "id": event["id"],
         "datetime": event["datetime"],
         "name": event["name"],
         "summary": event["summary"],

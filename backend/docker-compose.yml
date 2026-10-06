@@ -1,0 +1,10 @@
+services:
+  collector:
+    build:
+      context: ./collector
+    container_name: crime_radar_collector
+    env_file:
+      - ../.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
