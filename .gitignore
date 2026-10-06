@@ -1,1 +1,47 @@
+# Python
+# ============================================================
+
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Node.js / TypeScript / React
+# ============================================================
+# Dependencies
+
+node_modules/
+
+# npm
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# React / Vite / Next.js / frontend builds
+dist/
+build/
+out/
+
+# Next.js
+.next/
+.next/cache/
+.vercel/
+
+# Environment / Secrets
+# ============================================================
+
 .env
+.env.*
+
+
+# macOS
+# ============================================================
+
+.DS_Store
