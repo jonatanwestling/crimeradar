@@ -24,3 +24,11 @@ individual incidents and aggregated crime statistics. Users can select
 incidents on the map to view additional information, while a separate
 statistics interface provides an overview of crime trends and other
 aggregated data.
+
+## Connect to the database
+
+```bash
+psql -U radar_user -d crime_radar -h localhost -W
+```
+
+Now enter the password for the radar_user when prompted (the password is located in the .env file).
