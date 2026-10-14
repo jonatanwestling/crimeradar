@@ -1,140 +1,93 @@
 import * as React from 'react';
-import { useRef } from 'react';
-import Map, { Source, Layer } from 'react-map-gl/maplibre';
-import { setWorkerUrl } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import { useState, useEffect, useMemo } from 'react';
+import CrimeMap from './components/map/CrimeMap';
+import Sidebar from './components/sidebar/Sidebar';
+import { incidentsToGeoJSON } from './utils/geojson';
+import { fetchIncidents } from './api/incidents';
 
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-setWorkerUrl(workerUrl);
-
-// 1. Layer Definitions
-const clusterLayer = {
-  id: 'clusters',
-  type: 'circle',
-  source: 'crimes',
-  filter: ['has', 'point_count'],
-  paint: {
-    // Color stops based on incident count: < 10 (blue), < 50 (yellow), 50+ (red/pink)
-    'circle-color': [
-      'step',
-      ['get', 'point_count'],
-      '#51bbd6',
-      10,
-      '#f1f075',
-      50,
-      '#f28cb1'
-    ],
-    // Radius stops based on incident count
-    'circle-radius': [
-      'step',
-      ['get', 'point_count'],
-      18,
-      10,
-      25,
-      50,
-      35
-    ]
-  }
-};
-
-const clusterCountLayer = {
-  id: 'cluster-count',
-  type: 'symbol',
-  source: 'crimes',
-  filter: ['has', 'point_count'],
-  layout: {
-    'text-field': '{point_count_abbreviated}',
-    'text-size': 12
-  },
-  paint: {
-    'text-color': '#000000'
-  }
-};
-
-const unclusteredPointLayer = {
-  id: 'unclustered-point',
-  type: 'circle',
-  source: 'crimes',
-  filter: ['!', ['has', 'point_count']],
-  paint: {
-    'circle-color': '#ff4d4d',
-    'circle-radius': 6,
-    'circle-stroke-width': 2,
-    'circle-stroke-color': '#ffffff'
-  }
-};
-
-// Sample Swedish incident points (Replace with your backend API data or GeoJSON URL)
-const sampleCrimeData = {
-  type: 'FeatureCollection',
-  features: [
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [18.0686, 59.3293] }, properties: { type: 'Stöld' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [18.0710, 59.3320] }, properties: { type: 'Rån' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [18.0650, 59.3280] }, properties: { type: 'Inbrott' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [11.9746, 57.7089] }, properties: { type: 'Trafikbrott' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [11.9680, 57.7050] }, properties: { type: 'Misshandel' } },
-    { type: 'Feature', geometry: { type: 'Point', coordinates: [13.0038, 55.6050] }, properties: { type: 'Skadegörelse' } }
-  ]
+const MAP_STYLES = {
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 };
 
 export default function App() {
-  const mapRef = useRef(null);
+  const [incidents, setIncidents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState('Alla');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // 2. Click Handler to expand cluster on click
-  const onClick = (event) => {
-    const feature = event.features && event.features[0];
-    if (!feature) return;
-
-    const clusterId = feature.properties.cluster_id;
-    if (clusterId == null) {
-      // Clicked on a single incident point
-      alert(`Incident: ${feature.properties.type || 'Crime reported'}`);
-      return;
+  // Initialize theme from system preference or default to dark
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     }
+    return 'dark';
+  });
 
-    const map = mapRef.current.getMap();
-    const source = map.getSource('crimes');
+  // Fetch incidents on mount
+  useEffect(() => {
+    let mounted = true;
+    async function loadData() {
+      setLoading(true);
+      const data = await fetchIncidents();
+      if (mounted) {
+        setIncidents(data);
+        setLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-    // Calculate zoom needed to expand this cluster
-    source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-      if (err) return;
+  // Filter incidents based on search term and selected type
+  const filteredIncidents = useMemo(() => {
+    return incidents.filter((incident) => {
+      const matchesType =
+        selectedType === 'Alla' || incident.type === selectedType;
 
-      map.easeTo({
-        center: feature.geometry.coordinates,
-        zoom: zoom,
-        duration: 500
-      });
+      const query = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !query ||
+        incident.name?.toLowerCase().includes(query) ||
+        incident.location_name?.toLowerCase().includes(query) ||
+        incident.summary?.toLowerCase().includes(query);
+
+      return matchesType && matchesSearch;
     });
+  }, [incidents, selectedType, searchTerm]);
+
+  // Convert filtered incidents to GeoJSON for MapLibre
+  const geojson = useMemo(() => {
+    return incidentsToGeoJSON(filteredIncidents);
+  }, [filteredIncidents]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <Map
-        ref={mapRef}
-        initialViewState={{
-          longitude: 16.0,
-          latitude: 62.0,
-          zoom: 4.8
-        }}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-        interactiveLayerIds={['clusters', 'unclustered-point']}
-        onClick={onClick}
-        cursor="pointer"
-      >
-        <Source
-          id="crimes"
-          type="geojson"
-          data={sampleCrimeData} // Can also be a URL string: "http://localhost:8000/api/crimes.geojson"
-          cluster={true}
-          clusterMaxZoom={14}
-          clusterRadius={50}
-        >
-          <Layer {...clusterLayer} />
-          <Layer {...clusterCountLayer} />
-          <Layer {...unclusteredPointLayer} />
-        </Source>
-      </Map>
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Sidebar Controls and Incident Feed */}
+      <Sidebar
+        incidents={filteredIncidents}
+        selectedType={selectedType}
+        onSelectType={setSelectedType}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        isOpen={sidebarOpen}
+        onToggleOpen={() => setSidebarOpen((prev) => !prev)}
+      />
+
+      {/* Main Interactive Map with Clustering */}
+      <CrimeMap
+        geojson={geojson}
+        mapStyle={MAP_STYLES[theme]}
+      />
     </div>
   );
 }
