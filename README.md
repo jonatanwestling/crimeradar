@@ -25,22 +25,63 @@ incidents on the map to view additional information, while a separate
 statistics interface provides an overview of crime trends and other
 aggregated data.
 
-## Running Locally
+## Setup
 
-### Backend API
+The database runs outside Docker. Create the backend environment file before
+running production services or the collector:
 
 ```bash
-cd backend/api
-pip install -r requirements.txt
-uvicorn main:app
+cp backend/.env.example backend/.env
 ```
 
-### Frontend
+Then edit `backend/.env` and point `DB_URL` at the external PostgreSQL database:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+DB_URL=postgresql://USER:PASSWORD@HOST:5432/crime_radar
+```
+
+If the database is running on the Docker host, use `host.docker.internal` as the
+host name.
+
+## Running on the VPS
+
+Run the production backend services with one command:
+
+```bash
+./run.sh prod
+```
+
+This starts the API on port `8000` and the collector. It does not start a
+database container.
+
+Useful production commands:
+
+```bash
+./run.sh prod-logs
+./run.sh prod-down
+```
+
+## Running Locally for Debugging
+
+Run the API and frontend together:
+
+```bash
+./run.sh dev
+```
+
+The API runs at <http://127.0.0.1:8000> and the frontend runs through Vite.
+
+You can also run only one side:
+
+```bash
+./run.sh dev-api
+./run.sh dev-frontend
+```
+
+To run the collector once against the database in `backend/.env`:
+
+```bash
+./run.sh collector-once
 ```
 
 ## Connect to the database
@@ -49,4 +90,5 @@ npm run dev
 psql -U radar_user -d crime_radar -h localhost -W
 ```
 
-Now enter the password for the radar_user when prompted (the password is located in the .env file).
+Now enter the password for the radar_user when prompted. The database
+connection string is configured in `backend/.env`.

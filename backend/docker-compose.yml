@@ -1,10 +1,23 @@
 services:
+  api:
+    build:
+      context: ./api
+      dockerfile: dockerfile
+    container_name: crime_radar_api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
   collector:
     build:
       context: ./collector
     container_name: crime_radar_collector
     env_file:
-      - ../.env
+      - .env
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
