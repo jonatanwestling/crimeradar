@@ -9,7 +9,7 @@ allowing users to explore incidents based on factors such as incident
 type, location, and time period.
 
 The primary data source is the Swedish Police Events API
-(https://polisen.se/api/eventsLinks to an external site.), which provides information about
+(<https://polisen.se/api/eventsLinks> to an external site.), which provides information about
 recently reported incidents but is limited to the 500 most recent
 events. To overcome this limitation, a backend service periodically
 retrieves new events from the API and stores them in a PostgreSQL
@@ -18,12 +18,30 @@ and enables the application to provide historical queries beyond the
 retention limit of the API.
 
 In addition to police reported events, historical crime statistics will
-be scraped from Brå (https://bra.se/Links to an external site.) and then injected into the
+be scraped from Brå (<https://bra.se/Links> to an external site.) and then injected into the
 database. These data sources allow the application to present both
 individual incidents and aggregated crime statistics. Users can select
 incidents on the map to view additional information, while a separate
 statistics interface provides an overview of crime trends and other
 aggregated data.
+
+## Running Locally
+
+### Backend API
+
+```bash
+cd backend/api
+pip install -r requirements.txt
+uvicorn main:app
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
 ## Connect to the database
 
