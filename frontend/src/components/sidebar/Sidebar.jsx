@@ -343,7 +343,7 @@ export default function Sidebar({
                           color: 'var(--text-dim)'
                         }}
                       >
-                        {incident.datetime ? incident.datetime.split(' ')[1]?.slice(0, 5) : ''}
+                        {incident.datetime ? (incident.datetime.match(/[T ](\d{2}:\d{2})/)?.[1] || '') : ''}
                       </span>
                     </div>
 
