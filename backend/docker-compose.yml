@@ -5,15 +5,18 @@ services:
       dockerfile: dockerfile
     container_name: crime_radar_api
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     network_mode: host
     restart: unless-stopped
 
   collector:
     build:
       context: ./collector
+      dockerfile: Dockerfile
     container_name: crime_radar_collector
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     network_mode: host
     restart: unless-stopped
