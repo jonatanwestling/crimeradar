@@ -27,14 +27,14 @@ aggregated data.
 
 ## Setup
 
-The database runs outside Docker. Create the backend environment file before
+The database runs outside Docker. Create the environment file before
 running production services or the collector:
 
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
 ```
 
-Then edit `backend/.env` and point `DB_URL` at the external PostgreSQL database:
+Then edit `.env` and point `DB_URL` at the external PostgreSQL database:
 
 ```bash
 DB_URL=postgresql://USER:PASSWORD@HOST:5432/crime_radar
@@ -78,7 +78,7 @@ You can also run only one side:
 ./run.sh dev-frontend
 ```
 
-To run the collector once against the database in `backend/.env`:
+To run the collector once against the database in `.env`:
 
 ```bash
 ./run.sh collector-once
@@ -91,4 +91,4 @@ psql -U radar_user -d crime_radar -h localhost -W
 ```
 
 Now enter the password for the radar_user when prompted. The database
-connection string is configured in `backend/.env`.
+connection string is configured in `.env`.

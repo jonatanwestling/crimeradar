@@ -6,15 +6,15 @@ cd "$ROOT_DIR"
 
 case "${1:-}" in
   prod)
-    docker compose --env-file backend/.env -f backend/docker-compose.yml up --build -d
+    docker compose --env-file .env -f backend/docker-compose.yml up --build -d
     ;;
 
   prod-down)
-    docker compose --env-file backend/.env -f backend/docker-compose.yml down
+    docker compose --env-file .env -f backend/docker-compose.yml down
     ;;
 
   prod-logs)
-    docker compose --env-file backend/.env -f backend/docker-compose.yml logs -f
+    docker compose --env-file .env -f backend/docker-compose.yml logs -f
     ;;
 
   dev)
