@@ -46,20 +46,24 @@ the VPS itself. That means a local Postgres database can use
 
 ## Running on the VPS
 
-Run the production backend services with one command:
+Deploy the full production stack (Frontend, Backend, and Nginx reverse proxy) with one command:
 
 ```bash
-./run.sh prod
+./run.sh deploy
 ```
 
-This starts the API on port `8000` and the collector. It does not start a
-database container.
+This starts:
+- **Frontend**: Port `3000` in Docker (compiled React served via internal Nginx)
+- **Backend API**: Port `8000` in Docker (FastAPI)
+- **Collector**: Background service in Docker
+- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents` to 8000)
 
 Useful production commands:
 
 ```bash
-./run.sh prod-logs
-./run.sh prod-down
+./run.sh prod        # Start both frontend & backend in Docker
+./run.sh prod-logs   # View live container logs
+./run.sh prod-down   # Stop all containers
 ```
 
 ## Running Locally for Debugging
