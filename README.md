@@ -40,8 +40,9 @@ Then edit `.env` and point `DB_URL` at the external PostgreSQL database:
 DB_URL=postgresql://USER:PASSWORD@HOST:5432/crime_radar
 ```
 
-If the database is running on the Docker host, use `host.docker.internal` as the
-host name.
+On the VPS, production containers use host networking, so `localhost` points at
+the VPS itself. That means a local Postgres database can use
+`localhost:5432` in `DB_URL`.
 
 ## Running on the VPS
 
