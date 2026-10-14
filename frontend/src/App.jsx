@@ -1,5 +1,4 @@
-import * as React from 'react';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import CrimeMap from './components/map/CrimeMap';
 import Sidebar from './components/sidebar/Sidebar';
 import { incidentsToGeoJSON } from './utils/geojson';
@@ -12,10 +11,10 @@ const MAP_STYLES = {
 
 export default function App() {
   const [incidents, setIncidents] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState('Alla');
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [selectedIncident, setSelectedIncident] = useState(null);
 
   // Initialize theme from system preference or default to dark
   const [theme, setTheme] = useState(() => {
@@ -25,15 +24,18 @@ export default function App() {
     return 'dark';
   });
 
+  // Keep data-theme in sync with document root for styling
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   // Fetch incidents on mount
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      setLoading(true);
       const data = await fetchIncidents();
       if (mounted) {
         setIncidents(data);
-        setLoading(false);
       }
     }
     loadData();
@@ -68,11 +70,32 @@ export default function App() {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  const handleSelectIncidentFromFeed = useCallback((incident) => {
+    if (!incident) {
+      setSelectedIncident(null);
+      return;
+    }
+    setSelectedIncident({
+      coordinates: [incident.longitude, incident.latitude],
+      properties: incident
+    });
+  }, []);
+
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* Sidebar Controls and Incident Feed */}
+    <div
+      data-theme={theme}
+      style={{
+        width: '100vw',
+        height: '100vh',
+        position: 'relative',
+        overflow: 'hidden',
+        background: theme === 'dark' ? '#121214' : '#fafafa'
+      }}
+    >
+      {/* Clean Transparent Frosted Sidebar */}
       <Sidebar
         incidents={filteredIncidents}
+        allIncidents={incidents}
         selectedType={selectedType}
         onSelectType={setSelectedType}
         searchTerm={searchTerm}
@@ -81,12 +104,18 @@ export default function App() {
         onToggleTheme={toggleTheme}
         isOpen={sidebarOpen}
         onToggleOpen={() => setSidebarOpen((prev) => !prev)}
+        selectedIncidentId={selectedIncident?.properties?.id}
+        onSelectIncident={handleSelectIncidentFromFeed}
       />
 
-      {/* Main Interactive Map with Clustering */}
+      {/* Main Interactive Map with Liquid Glass Elements */}
       <CrimeMap
         geojson={geojson}
         mapStyle={MAP_STYLES[theme]}
+        isDark={theme === 'dark'}
+        selectedIncident={selectedIncident}
+        onSelectIncident={setSelectedIncident}
+        totalIncidents={filteredIncidents.length}
       />
     </div>
   );
