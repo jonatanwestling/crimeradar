@@ -115,17 +115,54 @@ export const FALLBACK_INCIDENTS = [
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:8000' : '');
 
 /**
- * Fetch incidents from the backend API.
- * Falls back to sample data if backend is unreachable or still in development.
+ * Formats a Date object or date string into 'YYYY-MM-DD' (local calendar date).
+ *
+ * @param {Date|string} [date=new Date()]
+ * @returns {string} Formatted date string (YYYY-MM-DD)
  */
-export async function fetchIncidents() {
+export function formatDate(date = new Date()) {
+  if (!date) return '';
+  if (typeof date === 'string') {
+    // Already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return date;
+    }
+    date = parsed;
+  }
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return '';
+}
+
+/**
+ * Fetch incidents for a specific date range from the backend API.
+ * Falls back to sample data if backend is unreachable or still in development.
+ *
+ * @param {Date|string} startDate - Start of date range (YYYY-MM-DD or Date object)
+ * @param {Date|string} [endDate] - End of date range (defaults to startDate)
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidentsByDateRange(startDate, endDate = startDate) {
+  const formattedStart = formatDate(startDate) || formatDate(new Date());
+  const formattedEnd = formatDate(endDate) || formattedStart;
+
+  console.log(`[CrimeRadar] Fetching incidents for: ${formattedStart} -> ${formattedEnd}`);
+
   try {
     const res = await fetch(`${API_BASE_URL}/incidents/national`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        start_date: '2026-01-01',
-        end_date: '2026-12-31'
+        start_date: formattedStart,
+        end_date: formattedEnd
       })
     });
 
@@ -134,6 +171,8 @@ export async function fetchIncidents() {
     }
 
     const data = await res.json();
+    console.log('[CrimeRadar] API response data:', data);
+
     if (Array.isArray(data) && data.length > 0) {
       return data;
     }
@@ -142,5 +181,53 @@ export async function fetchIncidents() {
     console.warn('Backend API not available, using fallback incident data:', error.message);
     return FALLBACK_INCIDENTS;
   }
+}
+
+/**
+ * Fetch incidents for a single specific date.
+ *
+ * @param {Date|string} [date=new Date()] - Specific date to query (defaults to today)
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidentsForDate(date = new Date()) {
+  return fetchIncidentsByDateRange(date, date);
+}
+
+/**
+ * Fetch incidents for today only.
+ *
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchTodayIncidents() {
+  return fetchIncidentsForDate(new Date());
+}
+
+/**
+ * Dynamic incident fetching function.
+ * Supports:
+ * - No arguments: fetches today's incidents (fetchIncidents())
+ * - Single date: fetches for that specific date (fetchIncidents('2026-10-14') or fetchIncidents(new Date()))
+ * - Date range: fetches between start and end (fetchIncidents('2026-10-01', '2026-10-14'))
+ * - Options object: fetchIncidents({ startDate, endDate }) or fetchIncidents({ date })
+ *
+ * @param {Date|string|Object} [startDateOrOptions=new Date()] - Single date, start date, or options object
+ * @param {Date|string} [maybeEndDate] - Optional end date if first arg is start date
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidents(startDateOrOptions = new Date(), maybeEndDate) {
+  if (
+    startDateOrOptions &&
+    typeof startDateOrOptions === 'object' &&
+    !(startDateOrOptions instanceof Date)
+  ) {
+    const { startDate, endDate, start_date, end_date, date } = startDateOrOptions;
+    const start = startDate || start_date || date || new Date();
+    const end = endDate || end_date || start;
+    return fetchIncidentsByDateRange(start, end);
+  }
+
+  const startDate = startDateOrOptions || new Date();
+  const endDate = maybeEndDate || startDate;
+  return fetchIncidentsByDateRange(startDate, endDate);
 }
 
