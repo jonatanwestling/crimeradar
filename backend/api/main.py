@@ -3,7 +3,10 @@ from datetime import date
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 
-from db import get_conn, pool
+try:
+    from db import get_conn, pool
+except ImportError:
+    from app.db import get_conn, pool
 
 
 # connect to DB at startup, close at exit
