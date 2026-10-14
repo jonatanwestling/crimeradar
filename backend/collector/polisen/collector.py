@@ -2,7 +2,7 @@ import os
 import requests
 import psycopg
 from dotenv import load_dotenv
-import time
+from time import sleep
 
 
 POLICE_EVENTS_URL = "https://polisen.se/api/events"
