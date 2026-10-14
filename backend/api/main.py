@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from datetime import date
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 
 from db import get_conn, pool
@@ -17,6 +18,11 @@ app = FastAPI(lifespan=lifespan)
 # Requesttypes
 class CountyIncidentRequest(BaseModel):
     county: str
+    start_date: date
+    end_date: date
+
+
+class NationalIncidentsRequest(BaseModel):
     start_date: date
     end_date: date
 

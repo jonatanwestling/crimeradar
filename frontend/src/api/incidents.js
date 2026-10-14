@@ -153,10 +153,6 @@ export function formatDate(date = new Date()) {
  * @param {Date|string} startDate - Start of date range (YYYY-MM-DD or Date object)
  * @param {Date|string} [endDate] - End of date range (defaults to startDate)
  * @returns {Promise<Array>} List of incidents
- *
- * @param {Date|string} startDate - Start of date range (YYYY-MM-DD or Date object)
- * @param {Date|string} [endDate] - End of date range (defaults to startDate)
- * @returns {Promise<Array>} List of incidents
  */
 export async function fetchIncidentsByDateRange(
   startDate,
@@ -197,4 +193,56 @@ export async function fetchIncidentsByDateRange(
     );
     return FALLBACK_INCIDENTS;
   }
+}
+
+/**
+ * Fetch incidents for a single specific date.
+ *
+ * @param {Date|string} [date=new Date()] - Specific date to query (defaults to today)
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidentsForDate(date = new Date()) {
+  return fetchIncidentsByDateRange(date, date);
+}
+
+/**
+ * Fetch incidents for today only.
+ *
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchTodayIncidents() {
+  return fetchIncidentsForDate(new Date());
+}
+
+/**
+ * Dynamic incident fetching function.
+ * Supports:
+ * - No arguments: fetches today's incidents (fetchIncidents())
+ * - Single date: fetches for that specific date (fetchIncidents('2026-10-14') or fetchIncidents(new Date()))
+ * - Date range: fetches between start and end (fetchIncidents('2026-10-01', '2026-10-14'))
+ * - Options object: fetchIncidents({ startDate, endDate }) or fetchIncidents({ date })
+ *
+ * @param {Date|string|Object} [startDateOrOptions=new Date()] - Single date, start date, or options object
+ * @param {Date|string} [maybeEndDate] - Optional end date if first arg is start date
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidents(
+  startDateOrOptions = new Date(),
+  maybeEndDate,
+) {
+  if (
+    startDateOrOptions &&
+    typeof startDateOrOptions === "object" &&
+    !(startDateOrOptions instanceof Date)
+  ) {
+    const { startDate, endDate, start_date, end_date, date } =
+      startDateOrOptions;
+    const start = startDate || start_date || date || new Date();
+    const end = endDate || end_date || start;
+    return fetchIncidentsByDateRange(start, end);
+  }
+
+  const startDate = startDateOrOptions || new Date();
+  const endDate = maybeEndDate || startDate;
+  return fetchIncidentsByDateRange(startDate, endDate);
 }
