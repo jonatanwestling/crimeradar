@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from datetime import date
 from pydantic import BaseModel
@@ -19,9 +20,6 @@ class CountyIncidentRequest(BaseModel):
     county: str
     start_date: date
     end_date: date
-
-
-
 
 
 class NationalIncidentTypeRequest(BaseModel):
