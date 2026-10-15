@@ -53,10 +53,11 @@ Deploy the full production stack (Frontend, Backend, and Nginx reverse proxy) wi
 ```
 
 This starts:
+
 - **Frontend**: Port `3000` in Docker (compiled React served via internal Nginx)
 - **Backend API**: Port `8000` in Docker (FastAPI)
 - **Collector**: Background service in Docker
-- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents` to 8000)
+- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents`, `/mcp` to 8000)
 
 Useful production commands:
 
@@ -97,3 +98,27 @@ psql -U radar_user -d crime_radar -h localhost -W
 
 Now enter the password for the radar_user when prompted. The database
 connection string is configured in `.env`.
+
+## Model Context Protocol Server
+
+The backend provides a built-in MCP server using Server-Sent Events (SSE) that allows AI agents to query and filter events.
+
+### Endpoints
+
+- **Local Development**: `http://127.0.0.1:8000/mcp/sse`
+- **Production**: `http://<SERVER_IP_OR_DOMAIN>/mcp/sse`
+
+### Agent Configuration
+
+Add the following to your agent or client MCP configuration file:
+
+```json
+{
+  "mcpServers": {
+    "crime-radar-sweden": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp/sse"]
+    }
+  }
+}
+```
