@@ -2,6 +2,7 @@ import os
 import requests
 import psycopg
 from dotenv import load_dotenv
+from time import sleep
 
 
 POLICE_EVENTS_URL = "https://polisen.se/api/events"
@@ -58,22 +59,21 @@ def save_event(conn, event):
         cur.execute(sql, event)
 
 def main():
-    load_dotenv()
-    database_url = os.getenv("DB_URL")
+    while True:
 
-    raw_events = fetch_police_events()
-    normalized_events = [normalize_event(event) for event in raw_events]
+        load_dotenv()
+        database_url = os.getenv("DB_URL")
 
-    with psycopg.connect(database_url) as conn:
-        for event in normalized_events:
-            save_event(conn, event)
+        raw_events = fetch_police_events()
+        normalized_events = [normalize_event(event) for event in raw_events]
 
-        conn.commit()
+        with psycopg.connect(database_url) as conn:
+            for event in normalized_events:
+                save_event(conn, event)
 
-    print(f"Collected {len(normalized_events)} police events")
+            conn.commit()
 
-    print(normalized_events[1])
-
+        sleep(60)
 
 
 if __name__=="__main__":

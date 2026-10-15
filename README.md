@@ -25,22 +25,68 @@ incidents on the map to view additional information, while a separate
 statistics interface provides an overview of crime trends and other
 aggregated data.
 
-## Running Locally
+## Setup
 
-### Backend API
+The database runs outside Docker. Create the environment file before
+running production services or the collector:
 
 ```bash
-cd backend/api
-pip install -r requirements.txt
-uvicorn main:app
+cp .env.example .env
 ```
 
-### Frontend
+Then edit `.env` and point `DB_URL` at the external PostgreSQL database:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+DB_URL=postgresql://USER:PASSWORD@HOST:5432/crime_radar
+```
+
+On the VPS, production containers use host networking, so `localhost` points at
+the VPS itself. That means a local Postgres database can use
+`localhost:5432` in `DB_URL`.
+
+## Running on the VPS
+
+Deploy the full production stack (Frontend, Backend, and Nginx reverse proxy) with one command:
+
+```bash
+./run.sh deploy
+```
+
+This starts:
+- **Frontend**: Port `3000` in Docker (compiled React served via internal Nginx)
+- **Backend API**: Port `8000` in Docker (FastAPI)
+- **Collector**: Background service in Docker
+- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents` to 8000)
+
+Useful production commands:
+
+```bash
+./run.sh prod        # Start both frontend & backend in Docker
+./run.sh prod-logs   # View live container logs
+./run.sh prod-down   # Stop all containers
+```
+
+## Running Locally for Debugging
+
+Run the API and frontend together:
+
+```bash
+./run.sh dev
+```
+
+The API runs at <http://127.0.0.1:8000> and the frontend runs through Vite.
+
+You can also run only one side:
+
+```bash
+./run.sh dev-api
+./run.sh dev-frontend
+```
+
+To run the collector once against the database in `.env`:
+
+```bash
+./run.sh collector-once
 ```
 
 ## Connect to the database
@@ -49,4 +95,5 @@ npm run dev
 psql -U radar_user -d crime_radar -h localhost -W
 ```
 
-Now enter the password for the radar_user when prompted (the password is located in the .env file).
+Now enter the password for the radar_user when prompted. The database
+connection string is configured in `.env`.
