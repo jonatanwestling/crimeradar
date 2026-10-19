@@ -101,30 +101,52 @@ export default function Sidebar({
               alignItems: 'center'
             }}
           >
-            <div>
-              <div style={{ marginBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img
+                src="/logo.png"
+                alt="Crime Radar Sweden"
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '6px',
+                  objectFit: 'contain',
+                  flexShrink: 0,
+                  display: 'block'
+                }}
+              />
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}
+              >
                 <span
                   style={{
-                    fontSize: '11px',
+                    fontSize: '10px',
                     fontWeight: 700,
-                    letterSpacing: '0.1em',
+                    letterSpacing: '0.12em',
                     textTransform: 'uppercase',
-                    color: 'var(--text-dim)'
+                    color: 'var(--text-dim)',
+                    lineHeight: 1,
+                    marginBottom: '3px'
                   }}
                 >
                   SWEDEN
                 </span>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    lineHeight: 1,
+                    letterSpacing: '-0.01em'
+                  }}
+                >
+                  CRIME RADAR
+                </h1>
               </div>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: '15px',
-                  fontWeight: 700,
-                  color: 'var(--text-main)'
-                }}
-              >
-                CRIME RADAR
-              </h1>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
