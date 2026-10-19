@@ -16,15 +16,20 @@ def fetch_police_events():
     return response.json()
 
 def normalize_event(event):
+    gps = event.get("location", {}).get("gps", "") if event.get("location") else ""
+    parts = gps.split(",") if gps else []
+    lat = parts[0].strip() if len(parts) > 0 else None
+    lon = parts[1].strip() if len(parts) > 1 else None
+
     return {
         "id": event["id"],
         "datetime": event["datetime"],
         "name": event["name"],
-        "summary": event["summary"],
+        "summary": event.get("summary"),
         "type": event["type"],
-        "location_name": event["location"]["name"],
-        "latitude": event["location"]["gps"].split(",")[0],
-        "longitude": event["location"]["gps"].split(",")[1],
+        "location_name": event.get("location", {}).get("name", "Okänd") if event.get("location") else "Okänd",
+        "latitude": lat,
+        "longitude": lon,
         "url": event["url"],
     }
 
@@ -56,25 +61,37 @@ def save_event(conn, event):
     """
 
     with conn.cursor() as cur:
-        cur.execute(sql, event)
+        try:
+            with conn.transaction():
+                cur.execute(sql, event)
+        except psycopg.Error as e:
+            print(f"Skipping event {event.get('id')} due to DB error: {e}", flush=True)
 
 def main():
     while True:
+        try:
+            load_dotenv()
+            database_url = os.getenv("DB_URL")
+            if not database_url:
+                print("Error: DB_URL environment variable is not set.", flush=True)
+                sleep(10)
+                continue
 
-        load_dotenv()
-        database_url = os.getenv("DB_URL")
+            raw_events = fetch_police_events()
+            normalized_events = [normalize_event(event) for event in raw_events]
 
-        raw_events = fetch_police_events()
-        normalized_events = [normalize_event(event) for event in raw_events]
+            with psycopg.connect(database_url) as conn:
+                for event in normalized_events:
+                    save_event(conn, event)
+                conn.commit()
 
-        with psycopg.connect(database_url) as conn:
-            for event in normalized_events:
-                save_event(conn, event)
+            print(f"Successfully processed {len(normalized_events)} events.", flush=True)
 
-            conn.commit()
+        except Exception as e:
+            print(f"Error in collection cycle: {e}", flush=True)
 
         sleep(60)
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
