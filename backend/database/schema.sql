@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS police_events (
     datetime TIMESTAMPTZ NOT NULL,
     name varchar(255) NOT NULL,
     summary TEXT,
-    url varchar(255) NOT NULL UNIQUE,
+    url varchar(255) NOT NULL,
     type varchar(255) NOT NULL,
     location_name varchar(100) NOT NULL,
     longitude DECIMAL(9,6),
@@ -12,9 +12,11 @@ CREATE TABLE IF NOT EXISTS police_events (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_police_events_url ON police_events(url);
+
 -- Table to store the additional text information for a police event
 CREATE TABLE IF NOT EXISTS police_event_details (
-    url varchar(255) PRIMARY KEY REFERENCES police_events(url) ON DELETE CASCADE,
+    url varchar(255) PRIMARY KEY,
     title varchar(255) NOT NULL,
     short_description TEXT,
     description TEXT,
@@ -24,3 +26,4 @@ CREATE TABLE IF NOT EXISTS police_event_details (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
