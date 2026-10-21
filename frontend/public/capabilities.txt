@@ -1,0 +1,79 @@
+# Capabilities Manifest - Crime Radar Sweden
+# https://crimeradar.hb6.se/
+# Last Updated: 2026-10-21
+
+[service]
+name = "Crime Radar Sweden"
+slug = "crime-radar-sweden"
+description = "Real-time Swedish police incident tracking, geospatial mapping, and automated MCP intelligence feed."
+version = "1.0.0"
+homepage = "https://crimeradar.hb6.se"
+api_docs = "https://crimeradar.hb6.se/docs"
+llms_txt = "https://crimeradar.hb6.se/llms.txt"
+robots_txt = "https://crimeradar.hb6.se/robots.txt"
+
+[bot_policy]
+allowed = true
+description = "Autonomous AI agents, LLM assistants, and automated data crawlers are welcome and explicitly permitted to connect to Crime Radar Sweden."
+authentication_required = false
+rate_limit_per_minute = 10
+rate_limit_scope = "per-ip"
+rate_limit_endpoints = ["/mcp/*"]
+robots_compliance = "Follow robots.txt directives and respect rate limiting with 429 backoff."
+
+[protocols]
+mcp_sse = true
+mcp_stdio = false
+rest_json = true
+
+[endpoints.mcp]
+protocol = "mcp"
+transport = "sse"
+url = "https://crimeradar.hb6.se/mcp/sse"
+content_type = "text/event-stream"
+messages_endpoint = "https://crimeradar.hb6.se/mcp/messages"
+
+[endpoints.rest]
+protocol = "http"
+format = "json"
+base_url = "https://crimeradar.hb6.se"
+routes = [
+  { path = "/incidents/national", method = "POST", description = "Query nationwide incidents by date range" },
+  { path = "/incidents/county", method = "POST", description = "Query county/municipality incidents by name and date range" },
+  { path = "/incidents/national/type", method = "POST", description = "Query incidents filtered by specific type" },
+  { path = "/health", method = "GET", description = "Healthcheck status" }
+]
+
+[tools.search_events]
+name = "search_events"
+description = "Search and filter Swedish police incident events with location, type, date/date-range, and full-text keyword support."
+parameters = [
+  { name = "location", type = "string", required = false, description = "City or municipality name (case-insensitive)" },
+  { name = "incident_type", type = "string", required = false, description = "Specific incident type (e.g. Stöld, Trafikolycka, Brand)" },
+  { name = "date", type = "string", format = "YYYY-MM-DD", required = false, description = "Single calendar date (Europe/Stockholm)" },
+  { name = "start_date", type = "string", format = "YYYY-MM-DD", required = false, description = "Start of date range" },
+  { name = "end_date", type = "string", format = "YYYY-MM-DD", required = false, description = "End of date range" },
+  { name = "query", type = "string", required = false, description = "Free-text search in incident headline and summary" },
+  { name = "limit", type = "integer", default = 25, min = 1, max = 100, required = false, description = "Max rows to return" },
+  { name = "offset", type = "integer", default = 0, min = 0, required = false, description = "Pagination offset" }
+]
+
+[tools.list_incident_types]
+name = "list_incident_types"
+description = "Retrieve all unique incident types currently registered in the database."
+parameters = []
+
+[client_config_example]
+"""
+{
+  "mcpServers": {
+    "crime-radar-sweden": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://crimeradar.hb6.se/mcp/sse"]
+    }
+  }
+}
+"""
+
+cli_command = "npx -y mcp-remote https://crimeradar.hb6.se/mcp/sse"
+

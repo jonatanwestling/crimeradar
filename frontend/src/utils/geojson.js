@@ -1,14 +1,14 @@
 /**
  * Converts a list of incident objects to a GeoJSON FeatureCollection.
  * Handles both string and float coordinates, ensuring valid geometry.
+ * Preserves true coordinates without artificial dispersal.
  */
 export function incidentsToGeoJSON(incidents = []) {
-  const features = incidents
+  const features = (incidents || [])
     .filter((inc) => inc && inc.latitude != null && inc.longitude != null)
     .map((inc) => {
       const lat = typeof inc.latitude === 'string' ? parseFloat(inc.latitude) : inc.latitude;
       const lng = typeof inc.longitude === 'string' ? parseFloat(inc.longitude) : inc.longitude;
-
       if (isNaN(lat) || isNaN(lng)) return null;
 
       return {
@@ -24,7 +24,9 @@ export function incidentsToGeoJSON(incidents = []) {
           summary: inc.summary || '',
           type: inc.type || 'Händelse',
           location_name: inc.location_name || '',
-          url: inc.url || ''
+          url: inc.url || '',
+          latitude: lat,
+          longitude: lng
         }
       };
     })
@@ -35,4 +37,3 @@ export function incidentsToGeoJSON(incidents = []) {
     features
   };
 }
-

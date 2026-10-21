@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CrimeMap from './components/map/CrimeMap';
 import Sidebar from './components/sidebar/Sidebar';
+import McpModal from './components/mcp/McpModal';
 import DateBar from './components/datebar/DateBar';
 import { incidentsToGeoJSON } from './utils/geojson';
 import { fetchIncidents, formatDate } from './api/incidents';
@@ -27,8 +28,14 @@ export default function App() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 768;
+    }
+    return true;
+  });
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [mcpModalOpen, setMcpModalOpen] = useState(false);
 
   // Initialize theme from system preference or default to dark
   const [theme, setTheme] = useState(() => {
@@ -113,6 +120,10 @@ export default function App() {
       coordinates: [incident.longitude, incident.latitude],
       properties: incident
     });
+    // On mobile, automatically collapse sidebar so user can see the marker on the map
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    }
   }, []);
 
   if (showStatistics) {
@@ -130,7 +141,18 @@ export default function App() {
         background: theme === 'dark' ? '#121214' : '#fafafa'
       }}
     >
-      {/* Clean Transparent Frosted Sidebar */}
+      {/* 1. Main Interactive Map (Canvas background layer for frosted glass) */}
+      <CrimeMap
+        geojson={geojson}
+        mapStyle={MAP_STYLES[theme]}
+        isDark={theme === 'dark'}
+        selectedIncident={selectedIncident}
+        onSelectIncident={setSelectedIncident}
+        totalIncidents={filteredIncidents.length}
+        onOpenMcp={() => setMcpModalOpen(true)}
+      />
+
+      {/* 2. Clean Transparent Frosted Sidebar */}
       <Sidebar
         incidents={filteredIncidents}
         allIncidents={incidents}
@@ -154,9 +176,10 @@ export default function App() {
         onToggleOpen={() => setSidebarOpen((prev) => !prev)}
         selectedIncidentId={selectedIncident?.properties?.id}
         onSelectIncident={handleSelectIncidentFromFeed}
+        onOpenMcp={() => setMcpModalOpen(true)}
       />
 
-      {/* Floating Bottom Date Navigation Bar */}
+      {/* 3. Floating Bottom Date Navigation Bar */}
       <DateBar
         startDate={dateRange.startDate}
         endDate={dateRange.endDate}
@@ -164,14 +187,10 @@ export default function App() {
         loading={loading}
       />
 
-      {/* Main Interactive Map with Liquid Glass Elements */}
-      <CrimeMap
-        geojson={geojson}
-        mapStyle={MAP_STYLES[theme]}
-        isDark={theme === 'dark'}
-        selectedIncident={selectedIncident}
-        onSelectIncident={setSelectedIncident}
-        totalIncidents={filteredIncidents.length}
+      {/* 4. Model Context Protocol (MCP) & AI Agent Modal */}
+      <McpModal
+        isOpen={mcpModalOpen}
+        onClose={() => setMcpModalOpen(false)}
       />
     </div>
   );

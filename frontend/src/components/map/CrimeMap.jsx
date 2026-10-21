@@ -51,16 +51,41 @@ function getIncidentTypeStyle(type, isDark) {
   };
 }
 
+/**
+ * Universal helper for MapLibre getClusterLeaves that handles both Promise and callback
+ */
+function getClusterLeaves(source, clusterId, limit = 100, offset = 0) {
+  return new Promise((resolve) => {
+    try {
+      const res = source.getClusterLeaves(clusterId, limit, offset, (err, features) => {
+        if (!err && features) resolve(features);
+      });
+      if (res && typeof res.then === 'function') {
+        res.then(resolve).catch((err) => {
+          console.warn('Failed to get cluster leaves:', err);
+          resolve([]);
+        });
+      }
+    } catch (err) {
+      console.warn('Error calling getClusterLeaves:', err);
+      resolve([]);
+    }
+  });
+}
+
 export default function CrimeMap({
   geojson,
   mapStyle,
   isDark = true,
   selectedIncident: controlledIncident,
   onSelectIncident,
-  totalIncidents = 0
+  totalIncidents = 0,
+  onOpenMcp
 }) {
   const mapRef = useRef(null);
   const [internalIncident, setInternalIncident] = useState(null);
+  const [clusterPopup, setClusterPopup] = useState(null);
+  const [clusterOrigin, setClusterOrigin] = useState(null);
   const [cursor, setCursor] = useState('auto');
 
   const activeIncident = controlledIncident !== undefined ? controlledIncident : internalIncident;
@@ -76,27 +101,34 @@ export default function CrimeMap({
   );
 
   useEffect(() => {
-    if (activeIncident?.coordinates && mapRef.current) {
+    if (controlledIncident?.coordinates && mapRef.current) {
+      setClusterPopup(null);
+      setClusterOrigin(null);
       const map = mapRef.current.getMap ? mapRef.current.getMap() : mapRef.current;
       if (map && map.easeTo) {
         map.easeTo({
-          center: activeIncident.coordinates,
+          center: controlledIncident.coordinates,
           zoom: Math.max(map.getZoom(), 11.5),
           duration: 500
         });
       }
     }
-  }, [activeIncident]);
+  }, [controlledIncident]);
 
   const onMouseEnter = useCallback(() => setCursor('pointer'), []);
   const onMouseLeave = useCallback(() => setCursor('auto'), []);
 
   const handleClick = useCallback(
-    (event) => {
+    async (event) => {
       const feature = event.features && event.features[0];
-      if (!feature) return;
+      if (!feature) {
+        setClusterPopup(null);
+        setIncident(null);
+        setClusterOrigin(null);
+        return;
+      }
 
-      const clusterId = feature.properties?.cluster_id;
+      const clusterId = feature.properties?.cluster_id ?? feature.properties?.clusterId;
 
       if (clusterId != null) {
         const map = mapRef.current?.getMap ? mapRef.current.getMap() : mapRef.current;
@@ -105,15 +137,26 @@ export default function CrimeMap({
         const source = map.getSource('crimes');
         if (!source) return;
 
-        source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return;
-          map.easeTo({
-            center: feature.geometry.coordinates,
-            zoom: zoom + 0.5,
-            duration: 450
+        const pointCount = feature.properties?.point_count || 0;
+
+        // Fetch leaf incidents inside this cluster (up to 1000)
+        const leaves = await getClusterLeaves(source, clusterId, 1000, 0);
+
+        if (leaves && leaves.length > 0) {
+          setClusterPopup({
+            coordinates: feature.geometry.coordinates,
+            count: pointCount || leaves.length,
+            incidents: leaves.map((f) => ({
+              coordinates: f.geometry.coordinates,
+              properties: f.properties
+            }))
           });
-        });
+          setIncident(null);
+          setClusterOrigin(null);
+        }
       } else {
+        setClusterPopup(null);
+        setClusterOrigin(null);
         setIncident({
           coordinates: feature.geometry.coordinates,
           properties: feature.properties
@@ -124,6 +167,9 @@ export default function CrimeMap({
   );
 
   const resetView = useCallback(() => {
+    setClusterPopup(null);
+    setClusterOrigin(null);
+    setIncident(null);
     const map = mapRef.current?.getMap ? mapRef.current.getMap() : mapRef.current;
     if (map && map.easeTo) {
       map.easeTo({
@@ -132,7 +178,7 @@ export default function CrimeMap({
         duration: 650
       });
     }
-  }, []);
+  }, [setIncident]);
 
   const popupStyle = activeIncident ? getIncidentTypeStyle(activeIncident.properties?.type, isDark) : null;
 
@@ -168,8 +214,35 @@ export default function CrimeMap({
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
           </svg>
-          Återställ
+          <span className="clean-hud-reset-text">Återställ</span>
         </button>
+
+        {/* MCP Server Button */}
+        {onOpenMcp && (
+          <button
+            onClick={onOpenMcp}
+            title="Model Context Protocol (MCP) & AI Agent Guide"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              fontSize: '11px',
+              fontFamily: 'var(--sans)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              borderLeft: '1px solid var(--glass-border-subtle)',
+              paddingLeft: '8px'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-main)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            <span className="clean-radar-dot" style={{ background: '#38bdf8', boxShadow: '0 0 5px #38bdf8' }} />
+            <span>MCP</span>
+          </button>
+        )}
       </div>
 
       <Map
@@ -177,7 +250,7 @@ export default function CrimeMap({
         initialViewState={INITIAL_VIEW_STATE}
         style={{ width: '100%', height: '100%' }}
         mapStyle={mapStyle}
-        interactiveLayerIds={['clusters', 'unclustered-point']}
+        interactiveLayerIds={['clusters', 'cluster-count', 'unclustered-point']}
         onClick={handleClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -190,22 +263,206 @@ export default function CrimeMap({
           type="geojson"
           data={geojson}
           cluster={true}
-          clusterMaxZoom={14}
-          clusterRadius={45}
+          clusterMaxZoom={23}
+          clusterRadius={35}
+          maxzoom={24}
         >
           <Layer {...clusterLayer} />
           <Layer {...clusterCountLayer} />
           <Layer {...unclusteredPointLayer} />
         </Source>
 
+        {/* Cluster List Popup */}
+        {clusterPopup && (
+          <Popup
+            longitude={clusterPopup.coordinates[0]}
+            latitude={clusterPopup.coordinates[1]}
+            anchor="bottom"
+            onClose={() => setClusterPopup(null)}
+            closeOnClick={false}
+            offset={14}
+            maxWidth="min(330px, calc(100vw - 24px))"
+          >
+            <div
+              className="clean-frosted-popup-card"
+              style={{
+                width: '100%',
+                maxWidth: '310px',
+                maxHeight: 'min(380px, 60vh)',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '12px 14px',
+                boxSizing: 'border-box'
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '10px',
+                  paddingBottom: '8px',
+                  borderBottom: '1px solid var(--glass-border-subtle)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      color: isDark ? '#fbbf24' : '#d97706',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      padding: '2px 7px',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      fontFamily: 'var(--mono)'
+                    }}
+                  >
+                    {clusterPopup.count} st
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: 'var(--text-main)',
+                      letterSpacing: '0.02em'
+                    }}
+                  >
+                    Händelser i området
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setClusterPopup(null)}
+                  className="clean-frosted-btn clean-frosted-btn-circle"
+                  style={{ width: '22px', height: '22px' }}
+                  title="Stäng"
+                  aria-label="Stäng"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable List of Incidents in Cluster */}
+              <div
+                style={{
+                  overflowY: 'auto',
+                  maxHeight: '290px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  paddingRight: '2px'
+                }}
+              >
+                {clusterPopup.incidents.map((item, idx) => {
+                  const itemStyle = getIncidentTypeStyle(item.properties?.type, isDark);
+                  return (
+                    <div
+                      key={item.properties?.id || idx}
+                      onClick={() => {
+                        setClusterOrigin(clusterPopup);
+                        setClusterPopup(null);
+                        setIncident(item);
+                      }}
+                      style={{
+                        padding: '8px 10px',
+                        background: 'var(--glass-card-bg)',
+                        border: '1px solid var(--glass-border-subtle)',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '3px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--glass-card-hover)';
+                        e.currentTarget.style.borderColor = 'var(--glass-border-hover)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--glass-card-bg)';
+                        e.currentTarget.style.borderColor = 'var(--glass-border-subtle)';
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span
+                          className="clean-badge"
+                          style={{
+                            backgroundColor: itemStyle?.bg,
+                            border: `1px solid ${itemStyle?.border}`,
+                            color: itemStyle?.color,
+                            fontSize: '10px',
+                            padding: '1px 5px'
+                          }}
+                        >
+                          {item.properties?.type || 'Händelse'}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            color: 'var(--text-dim)',
+                            fontFamily: 'var(--mono)'
+                          }}
+                        >
+                          {item.properties?.datetime ? item.properties.datetime.slice(11, 16) : ''}
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: '11.5px',
+                          fontWeight: 500,
+                          color: 'var(--text-main)',
+                          lineHeight: 1.35,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}
+                        title={item.properties?.name}
+                      >
+                        {item.properties?.name}
+                      </div>
+
+                      {item.properties?.summary && (
+                        <div
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--text-muted)',
+                            lineHeight: 1.3,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {item.properties?.summary}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Popup>
+        )}
+
+        {/* Single Incident Detail Popup */}
         {activeIncident && (
           <Popup
             longitude={activeIncident.coordinates[0]}
             latitude={activeIncident.coordinates[1]}
             anchor="bottom"
-            onClose={() => setIncident(null)}
+            onClose={() => {
+              setIncident(null);
+              setClusterOrigin(null);
+            }}
             closeOnClick={false}
             offset={12}
+            maxWidth="min(330px, calc(100vw - 24px))"
           >
             <div className="clean-frosted-popup-card">
               {/* Header */}
@@ -217,19 +474,45 @@ export default function CrimeMap({
                   marginBottom: '8px'
                 }}
               >
-                <span
-                  className="clean-badge"
-                  style={{
-                    backgroundColor: popupStyle?.bg,
-                    border: `1px solid ${popupStyle?.border}`,
-                    color: popupStyle?.color
-                  }}
-                >
-                  {activeIncident.properties?.type || 'Händelse'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {clusterOrigin && (
+                    <button
+                      onClick={() => {
+                        setClusterPopup(clusterOrigin);
+                        setIncident(null);
+                        setClusterOrigin(null);
+                      }}
+                      className="clean-frosted-btn"
+                      style={{
+                        padding: '2px 8px',
+                        fontSize: '11px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                      title="Tillbaka till listan"
+                    >
+                      <span>← Lista</span>
+                    </button>
+                  )}
+                  <span
+                    className="clean-badge"
+                    style={{
+                      backgroundColor: popupStyle?.bg,
+                      border: `1px solid ${popupStyle?.border}`,
+                      color: popupStyle?.color
+                    }}
+                  >
+                    {activeIncident.properties?.type || 'Händelse'}
+                  </span>
+                </div>
 
                 <button
-                  onClick={() => setIncident(null)}
+                  onClick={() => {
+                    setIncident(null);
+                    setClusterOrigin(null);
+                  }}
                   className="clean-frosted-btn clean-frosted-btn-circle"
                   style={{ width: '24px', height: '24px' }}
                   title="Stäng"

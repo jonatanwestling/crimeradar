@@ -52,7 +52,7 @@ def search_events(
     params: dict[str, Any] = {}
 
     if location and location.strip():
-        conditions.append("location_name ILIKE %(location)s")
+        conditions.append("(location_name ILIKE %(location)s OR raw_location_name ILIKE %(location)s)")
         params["location"] = f"%{location.strip()}%"
 
     if incident_type and incident_type.strip():
@@ -84,7 +84,7 @@ def search_events(
     sql = f"""
         SELECT id, datetime, name, summary, url, type,
                location_name, longitude, latitude
-        FROM public.police_events
+        FROM v_police_events
         {where_clause}
         ORDER BY datetime DESC
         LIMIT %(limit)s OFFSET %(offset)s

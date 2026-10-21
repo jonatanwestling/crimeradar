@@ -1,0 +1,105 @@
+# Crime Radar Sweden
+
+> Real-time Swedish police incident tracking, geospatial visualization, and Model Context Protocol (MCP) data feed.
+
+Crime Radar Sweden aggregates and visualizes official incident reports published by the Swedish Police (Polisen.se). The service provides an interactive live map, an HTTP REST API, and a built-in Model Context Protocol (MCP) server over Server-Sent Events (SSE) that autonomous AI agents and LLMs can connect to for querying crime and incident data across Sweden.
+
+Website: https://crimeradar.hb6.se/
+MCP SSE Endpoint: https://crimeradar.hb6.se/mcp/sse
+REST API Docs: https://crimeradar.hb6.se/docs
+Capabilities: https://crimeradar.hb6.se/capabilities.txt
+Robots Policy: https://crimeradar.hb6.se/robots.txt
+
+---
+
+## Agent & Bot Policy
+
+AI agents, autonomous crawlers, LLM assistants, and research bots are explicitly **allowed and encouraged** to use Crime Radar Sweden.
+- **Authentication**: None required (public open data).
+- **Access Level**: Full read access to public incidents and MCP tools.
+- **Rate Limit**: 10 requests per minute on `/mcp/*` endpoints per IP address. Please respect the limit and implement exponential backoff if a 429 status is encountered.
+
+---
+
+## Connecting via Model Context Protocol (MCP)
+
+Crime Radar Sweden exposes a remote MCP server running over Server-Sent Events (SSE).
+
+### Endpoint
+- **Endpoint**: `https://crimeradar.hb6.se/mcp/sse`
+
+### Configuration Snippet
+
+
+#### (`mcp_config.json` or `.cursor/mcp.json` or similar)
+```json
+{
+  "mcpServers": {
+    "crime-radar-sweden": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://crimeradar.hb6.se/mcp/sse"
+      ]
+    }
+  }
+}
+```
+---
+
+## MCP Tools Reference
+
+### Tool: `search_events`
+Search and filter Swedish police incident events. Supports filtering by municipality/location, incident category, exact date or date range, and free-text queries matching headline or summary. Returns results sorted newest first.
+
+**Parameters**:
+- `location` (string, optional): Swedish city or municipality name (e.g. "Stockholm", "Göteborg", "Malmö", "Uppsala"). Case-insensitive substring match.
+- `incident_type` (string, optional): Incident type category (e.g. "Stöld", "Rån", "Trafikolycka", "Brand", "Misshandel").
+- `date` (string, optional): Single calendar date filter in `YYYY-MM-DD` format (evaluated in `Europe/Stockholm` timezone).
+- `start_date` (string, optional): Start date in `YYYY-MM-DD` format for date range filtering.
+- `end_date` (string, optional): End date in `YYYY-MM-DD` format for date range filtering.
+- `query` (string, optional): Free-text keyword search across incident title and summary.
+- `limit` (integer, optional, default: 25, min: 1, max: 100): Maximum number of results.
+- `offset` (integer, optional, default: 0): Result offset for pagination.
+
+**Return Structure**:
+Returns a JSON array of incident objects:
+```json
+[
+  {
+    "id": 12345,
+    "datetime": "2026-10-21T10:15:00",
+    "name": "21 oktober 10:15, Stöld, Stockholm",
+    "summary": "Anmälan om cykelstöld och inbrott i förråd.",
+    "url": "/aktuellt/handelser/stockholm/stold",
+    "type": "Stöld",
+    "location_name": "Stockholm",
+    "latitude": 59.3293,
+    "longitude": 18.0686
+  }
+]
+```
+
+### Tool: `list_incident_types`
+List all unique Swedish police incident types currently available in the database.
+**Parameters**: None.
+**Return Structure**:
+Returns a list of strings, e.g.:
+```json
+[
+  "Alkohollagen",
+  "Anträffad död",
+  "Arbetsplatsolycka"
+]
+```
+
+---
+
+## Example Prompts for LLM Agents
+
+- "What recent police incidents occurred in Gothenburg today?"
+- "List all reported burglaries or thefts in Stockholm over the past 48 hours."
+- "Are there any active traffic accidents reported on major highways in Skåne?"
+- "Check the available incident types and find recent narcotics offenses."
+

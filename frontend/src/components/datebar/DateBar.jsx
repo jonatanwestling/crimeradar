@@ -83,11 +83,12 @@ export default function DateBar({
       : 'Nästa dag';
 
   return (
-    <div
-      className="clean-frosted-bottom-bar"
-      role="toolbar"
-      aria-label="Datumnavigering och intervall"
-    >
+    <>
+      <div
+        className="clean-frosted-bottom-bar"
+        role="toolbar"
+        aria-label="Datumnavigering och intervall"
+      >
       {/* Previous Span/Day Button */}
       <button
         type="button"
@@ -211,7 +212,9 @@ export default function DateBar({
         />
       )}
 
-      {/* Frosted Glass Date Range Picker Popover */}
+      </div>
+
+      {/* Frosted Glass Date Range Picker Popover (rendered as sibling to prevent nested backdrop-filter bug) */}
       {isPickerOpen && (
         <DateRangePicker
           startDate={activeStart}
@@ -221,6 +224,6 @@ export default function DateBar({
           anchorRef={badgeRef}
         />
       )}
-    </div>
+    </>
   );
 }

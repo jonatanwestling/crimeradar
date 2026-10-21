@@ -1,119 +1,3 @@
-// Sample police incidents across Sweden for local development/fallback
-export const FALLBACK_INCIDENTS = [
-  {
-    id: 1,
-    datetime: "2026-10-14 10:15:00",
-    name: "14 oktober 10:15, Stöld, Stockholm",
-    summary: "Anmälan om cykelstöld och inbrott i förråd i centrala Stockholm.",
-    type: "Stöld",
-    location_name: "Stockholm",
-    latitude: 59.3293,
-    longitude: 18.0686,
-    url: "/aktuellt/handelser/stockholm/stold",
-  },
-  {
-    id: 2,
-    datetime: "2026-10-14 11:30:00",
-    name: "14 oktober 11:30, Trafikolycka, Stockholm",
-    summary: "Två personbilar har kolliderat på E4 i höjd med Kungens kurva.",
-    type: "Trafikolycka",
-    location_name: "Stockholm",
-    latitude: 59.2711,
-    longitude: 17.9156,
-    url: "/aktuellt/handelser/stockholm/trafikolycka",
-  },
-  {
-    id: 3,
-    datetime: "2026-10-14 08:45:00",
-    name: "14 oktober 08:45, Rån, Göteborg",
-    summary: "Larm om rån mot en närbutik i Majorna. Polis är på plats.",
-    type: "Rån",
-    location_name: "Göteborg",
-    latitude: 57.6917,
-    longitude: 11.9283,
-    url: "/aktuellt/handelser/goteborg/ran",
-  },
-  {
-    id: 4,
-    datetime: "2026-10-14 09:20:00",
-    name: "14 oktober 09:20, Skadegörelse, Göteborg",
-    summary: "Krossade rutor och klotter rapporterat vid en skola.",
-    type: "Skadegörelse",
-    location_name: "Göteborg",
-    latitude: 57.7089,
-    longitude: 11.9746,
-    url: "/aktuellt/handelser/goteborg/skadegorelse",
-  },
-  {
-    id: 5,
-    datetime: "2026-10-14 12:00:00",
-    name: "14 oktober 12:00, Misshandel, Malmö",
-    summary: "Bråk mellan flera personer utomhus vid Möllevångstorget.",
-    type: "Misshandel",
-    location_name: "Malmö",
-    latitude: 55.5916,
-    longitude: 13.0075,
-    url: "/aktuellt/handelser/malmo/misshandel",
-  },
-  {
-    id: 6,
-    datetime: "2026-10-14 07:10:00",
-    name: "14 oktober 07:10, Trafikbrott, Malmö",
-    summary:
-      "Hastighetskontroll genomförd på Inre Ringvägen, flera böter utfärdade.",
-    type: "Trafikbrott",
-    location_name: "Malmö",
-    latitude: 55.578,
-    longitude: 13.042,
-    url: "/aktuellt/handelser/malmo/trafikbrott",
-  },
-  {
-    id: 7,
-    datetime: "2026-10-14 06:50:00",
-    name: "14 oktober 06:50, Inbrott, Uppsala",
-    summary: "Inbrott i villa under natten i Luthagen.",
-    type: "Inbrott",
-    location_name: "Uppsala",
-    latitude: 59.865,
-    longitude: 17.625,
-    url: "/aktuellt/handelser/uppsala/inbrott",
-  },
-  {
-    id: 8,
-    datetime: "2026-10-14 09:55:00",
-    name: "14 oktober 09:55, Brand, Umeå",
-    summary:
-      "Mindre brand i en container i ett industriområde, släckt av räddningstjänst.",
-    type: "Brand",
-    location_name: "Umeå",
-    latitude: 63.8258,
-    longitude: 20.263,
-    url: "/aktuellt/handelser/umea/brand",
-  },
-  {
-    id: 9,
-    datetime: "2026-10-14 10:40:00",
-    name: "14 oktober 10:40, Trafikolycka, Sundsvall",
-    summary: "Singelolycka med personbil på E4 södergående.",
-    type: "Trafikolycka",
-    location_name: "Sundsvall",
-    latitude: 62.3908,
-    longitude: 17.3069,
-    url: "/aktuellt/handelser/sundsvall/trafikolycka",
-  },
-  {
-    id: 10,
-    datetime: "2026-10-14 04:30:00",
-    name: "14 oktober 04:30, Rattfylleri, Kiruna",
-    summary: "Förare misstänkt för grovt rattfylleri stoppad i centrum.",
-    type: "Rattfylleri",
-    location_name: "Kiruna",
-    latitude: 67.8558,
-    longitude: 20.2253,
-    url: "/aktuellt/handelser/kiruna/rattfylleri",
-  },
-];
-
 export const SWEDISH_COUNTIES = [
   { id: "Blekinge", name: "Blekinge län" },
   { id: "Dalarna", name: "Dalarnas län" },
@@ -201,9 +85,7 @@ export const INCIDENT_TYPES = [
   "Övrigt",
 ];
 
-const API_BASE_URL =
-  import.meta.env?.VITE_API_URL ??
-  (import.meta.env?.DEV ? "http://localhost:8000" : "");
+const API_BASE_URL = import.meta.env?.VITE_API_URL ?? "";
 
 export async function fetchStatistics(startDate, endDate, signal) {
   const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
@@ -212,47 +94,6 @@ export async function fetchStatistics(startDate, endDate, signal) {
   const rows = await response.json();
   if (!Array.isArray(rows)) throw new Error('API:et returnerade ett oväntat svar.');
   return rows;
-}
-
-/**
- * Filter fallback data offline when backend is not accessible.
- */
-function filterFallbackIncidents({
-  county,
-  incidentType,
-  startDate,
-  endDate,
-}) {
-  let list = FALLBACK_INCIDENTS;
-
-  if (startDate && endDate) {
-    const s = formatDate(startDate);
-    const e = formatDate(endDate);
-    const dateFiltered = list.filter((i) => {
-      if (!i.datetime) return true;
-      const d = i.datetime.slice(0, 10);
-      return d >= s && d <= e;
-    });
-    if (dateFiltered.length > 0) {
-      list = dateFiltered;
-    }
-  }
-
-  if (county && county !== "Alla" && county !== "Alla län") {
-    const q = county.toLowerCase().replace(/ län$/i, "").trim();
-    list = list.filter((i) =>
-      (i.location_name || "").toLowerCase().includes(q)
-    );
-  }
-
-  if (incidentType && incidentType !== "Alla" && incidentType !== "Alla typer") {
-    const q = incidentType.toLowerCase().trim();
-    list = list.filter((i) =>
-      (i.type || "").toLowerCase().includes(q)
-    );
-  }
-
-  return list;
 }
 
 /**
@@ -407,7 +248,6 @@ export function formatDisplayDate(dateStr) {
 
 /**
  * Fetch incidents for a specific date range from the backend API.
- * Falls back to sample data if backend is unreachable or still in development.
  *
  * @param {Date|string} startDate - Start of date range (YYYY-MM-DD or Date object)
  * @param {Date|string} [endDate] - End of date range (defaults to startDate)
@@ -444,16 +284,10 @@ export async function fetchIncidentsByDateRange(
     if (Array.isArray(data)) {
       return data;
     }
-    return FALLBACK_INCIDENTS;
+    return [];
   } catch (error) {
-    console.warn(
-      "Backend API not available, using fallback incident data:",
-      error.message,
-    );
-    return filterFallbackIncidents({
-      startDate: formattedStart,
-      endDate: formattedEnd,
-    });
+    console.error("Failed to fetch national incidents:", error.message);
+    return [];
   }
 }
 
@@ -500,15 +334,8 @@ export async function fetchCountyIncidents(
     }
     return [];
   } catch (error) {
-    console.warn(
-      `Backend API /incidents/county not available, using fallback:`,
-      error.message,
-    );
-    return filterFallbackIncidents({
-      county,
-      startDate: formattedStart,
-      endDate: formattedEnd,
-    });
+    console.error(`Failed to fetch incidents for county "${county}":`, error.message);
+    return [];
   }
 }
 
@@ -555,15 +382,8 @@ export async function fetchIncidentsByType(
     }
     return [];
   } catch (error) {
-    console.warn(
-      `Backend API /incidents/national/type not available, using fallback:`,
-      error.message,
-    );
-    return filterFallbackIncidents({
-      incidentType,
-      startDate: formattedStart,
-      endDate: formattedEnd,
-    });
+    console.error(`Failed to fetch incidents for type "${incidentType}":`, error.message);
+    return [];
   }
 }
 
