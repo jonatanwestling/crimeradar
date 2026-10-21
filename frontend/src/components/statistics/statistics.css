@@ -9,12 +9,9 @@
 .statistics-eyebrow { color: var(--radar-green); font: 12px var(--mono); letter-spacing: .12em; }
 .statistics-heading h1 { font-size: clamp(28px, 5vw, 42px); letter-spacing: -.04em; margin: 12px 0; }
 .statistics-heading > p:last-child, .statistics-note, .statistics-chart-header p { color: var(--text-muted); line-height: 1.6; }
-.statistics-page button, .statistics-page input, .statistics-page select { font: inherit; color: var(--text-main); background: var(--glass-input-bg); border: 1px solid var(--glass-border); border-radius: 8px; min-height: 44px; padding: 8px 12px; box-sizing: border-box; color-scheme: dark; }
-.statistics-page[data-theme="light"] input, .statistics-page[data-theme="light"] select { color-scheme: light; }
-.statistics-page select option { background: #18181b; }
-.statistics-page[data-theme="light"] select option { background: #fff; }
+.statistics-nav button, .statistics-filters > button, .statistics-date-trigger { font: inherit; color: var(--text-main); background: var(--glass-input-bg); border: 1px solid var(--glass-border); border-radius: 8px; min-height: 44px; padding: 8px 12px; box-sizing: border-box; }
 .statistics-page button { cursor: pointer; }
-.statistics-page button:hover, .statistics-nav a:hover, .statistics-link:hover { background: var(--glass-card-hover); }
+.statistics-nav button:hover, .statistics-date-trigger:hover, .statistics-nav a:hover, .statistics-link:hover { background: var(--glass-card-hover); }
 .statistics-page :focus-visible, .statistics-link:focus-visible { outline: 2px solid var(--radar-green); outline-offset: 4px; }
 .statistics-page button:disabled { opacity: .5; cursor: default; }
 .statistics-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
@@ -28,11 +25,23 @@
 .statistics-chart-header { display: flex; justify-content: space-between; align-items: start; gap: 24px; }
 .statistics-chart-header h2 { font-size: 19px; margin: 0; }
 .statistics-chart-header p { font-size: 13px; margin-bottom: 0; }
-.statistics-chart-header select { max-width: 300px; width: 100%; }
-.statistics-legend { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 24px 0 8px; }
-.statistics-legend span { height: 3px; width: 20px; background: var(--radar-green); }
 .statistics-plot-scroll { overflow-x: auto; }
 .statistics-plot { display: block; width: 100%; min-width: 560px; }
+.statistics-plot-container { position: relative; min-width: 560px; }
+.statistics-tooltip { position: absolute; top: 8px; pointer-events: none; padding: 12px 16px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-base); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); font-size: 13px; max-width: 260px; z-index: 1; }
+.statistics-tooltip > strong { display: block; margin-bottom: 8px; }
+.statistics-tooltip > div { margin-top: 6px; overflow-wrap: anywhere; }
+.statistics-date-picker { position: relative; }
+.statistics-date-picker .clean-frosted-date-picker-popover { top: calc(100% + 12px); bottom: auto; left: 0; transform: none; animation: none; max-width: calc(100vw - 64px); }
+.statistics-type-picker { margin-top: 24px; }
+.statistics-type-picker summary { cursor: pointer; padding: 12px 0; }
+.statistics-type-picker fieldset { border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; max-height: 220px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 16px; }
+.statistics-type-picker legend { color: var(--text-muted); font-size: 13px; padding-inline: 8px; }
+.statistics-type-picker label { display: flex; flex-direction: row; align-items: center; gap: 10px; cursor: pointer; min-height: 40px; color: var(--text-main); }
+.statistics-type-picker input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--radar-green); }
+.statistics-legends { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 8px; }
+.statistics-legends > span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.statistics-table-scroll { overflow-x: auto; }
 .statistics-axis line { stroke: var(--glass-border); }
 .statistics-axis text, .statistics-axis-label { fill: var(--text-muted); font-size: 13px; }
 .statistics-message { padding: 48px 24px; border: 1px solid var(--glass-border); border-radius: 12px; text-align: center; }
@@ -53,5 +62,4 @@
   .statistics-summary strong { font-size: 26px; margin-top: 0; }
   .statistics-chart-card { padding: 16px; }
   .statistics-chart-header { flex-direction: column; gap: 20px; }
-  .statistics-chart-header label, .statistics-chart-header select { width: 100%; max-width: none; }
 }
