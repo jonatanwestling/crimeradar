@@ -51,6 +51,28 @@ function getIncidentTypeStyle(type, isDark) {
   };
 }
 
+/**
+ * Universal helper for MapLibre getClusterLeaves that handles both Promise and callback
+ */
+function getClusterLeaves(source, clusterId, limit = 100, offset = 0) {
+  return new Promise((resolve) => {
+    try {
+      const res = source.getClusterLeaves(clusterId, limit, offset, (err, features) => {
+        if (!err && features) resolve(features);
+      });
+      if (res && typeof res.then === 'function') {
+        res.then(resolve).catch((err) => {
+          console.warn('Failed to get cluster leaves:', err);
+          resolve([]);
+        });
+      }
+    } catch (err) {
+      console.warn('Error calling getClusterLeaves:', err);
+      resolve([]);
+    }
+  });
+}
+
 export default function CrimeMap({
   geojson,
   mapStyle,
@@ -93,14 +115,14 @@ export default function CrimeMap({
   const onMouseLeave = useCallback(() => setCursor('auto'), []);
 
   const handleClick = useCallback(
-    (event) => {
+    async (event) => {
       const feature = event.features && event.features[0];
       if (!feature) {
         setClusterPopup(null);
         return;
       }
 
-      const clusterId = feature.properties?.cluster_id;
+      const clusterId = feature.properties?.cluster_id ?? feature.properties?.clusterId;
 
       if (clusterId != null) {
         const map = mapRef.current?.getMap ? mapRef.current.getMap() : mapRef.current;
@@ -111,11 +133,10 @@ export default function CrimeMap({
 
         const pointCount = feature.properties?.point_count || 0;
 
-        // Fetch all incidents contained in this cluster (up to 100)
-        source.getClusterLeaves(clusterId, 100, 0, (err, leaves) => {
-          if (err || !leaves || leaves.length === 0) return;
+        // Fetch leaf incidents inside this cluster (works with MapLibre Promise or callback)
+        const leaves = await getClusterLeaves(source, clusterId, 100, 0);
 
-          // Open the cluster events list popup right at the cluster
+        if (leaves && leaves.length > 0) {
           setClusterPopup({
             coordinates: feature.geometry.coordinates,
             count: pointCount || leaves.length,
@@ -124,20 +145,8 @@ export default function CrimeMap({
               properties: f.properties
             }))
           });
-
-          // Close single incident popup
           setIncident(null);
-
-          // Smoothly ease in towards the cluster
-          source.getClusterExpansionZoom(clusterId, (zoomErr, zoom) => {
-            const targetZoom = zoomErr ? map.getZoom() + 1.2 : Math.min(zoom + 0.5, 12);
-            map.easeTo({
-              center: feature.geometry.coordinates,
-              zoom: Math.max(map.getZoom(), targetZoom),
-              duration: 450
-            });
-          });
-        });
+        }
       } else {
         setClusterPopup(null);
         setIncident({
@@ -205,7 +214,7 @@ export default function CrimeMap({
         initialViewState={INITIAL_VIEW_STATE}
         style={{ width: '100%', height: '100%' }}
         mapStyle={mapStyle}
-        interactiveLayerIds={['clusters', 'unclustered-point']}
+        interactiveLayerIds={['clusters', 'cluster-count', 'unclustered-point']}
         onClick={handleClick}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -235,16 +244,17 @@ export default function CrimeMap({
             onClose={() => setClusterPopup(null)}
             closeOnClick={false}
             offset={14}
-            maxWidth="320px"
+            maxWidth="330px"
           >
             <div
               className="clean-frosted-popup-card"
               style={{
-                width: '300px',
+                width: '310px',
                 maxHeight: '380px',
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '12px 14px'
+                padding: '12px 14px',
+                boxSizing: 'border-box'
               }}
             >
               {/* Header */}
