@@ -85,6 +85,7 @@ export default function CrimeMap({
   const mapRef = useRef(null);
   const [internalIncident, setInternalIncident] = useState(null);
   const [clusterPopup, setClusterPopup] = useState(null);
+  const [clusterOrigin, setClusterOrigin] = useState(null);
   const [cursor, setCursor] = useState('auto');
 
   const activeIncident = controlledIncident !== undefined ? controlledIncident : internalIncident;
@@ -100,17 +101,19 @@ export default function CrimeMap({
   );
 
   useEffect(() => {
-    if (activeIncident?.coordinates && mapRef.current) {
+    if (controlledIncident?.coordinates && mapRef.current) {
+      setClusterPopup(null);
+      setClusterOrigin(null);
       const map = mapRef.current.getMap ? mapRef.current.getMap() : mapRef.current;
       if (map && map.easeTo) {
         map.easeTo({
-          center: activeIncident.coordinates,
+          center: controlledIncident.coordinates,
           zoom: Math.max(map.getZoom(), 11.5),
           duration: 500
         });
       }
     }
-  }, [activeIncident]);
+  }, [controlledIncident]);
 
   const onMouseEnter = useCallback(() => setCursor('pointer'), []);
   const onMouseLeave = useCallback(() => setCursor('auto'), []);
@@ -120,6 +123,8 @@ export default function CrimeMap({
       const feature = event.features && event.features[0];
       if (!feature) {
         setClusterPopup(null);
+        setIncident(null);
+        setClusterOrigin(null);
         return;
       }
 
@@ -134,8 +139,8 @@ export default function CrimeMap({
 
         const pointCount = feature.properties?.point_count || 0;
 
-        // Fetch leaf incidents inside this cluster (works with MapLibre Promise or callback)
-        const leaves = await getClusterLeaves(source, clusterId, 100, 0);
+        // Fetch leaf incidents inside this cluster (up to 1000)
+        const leaves = await getClusterLeaves(source, clusterId, 1000, 0);
 
         if (leaves && leaves.length > 0) {
           setClusterPopup({
@@ -147,9 +152,11 @@ export default function CrimeMap({
             }))
           });
           setIncident(null);
+          setClusterOrigin(null);
         }
       } else {
         setClusterPopup(null);
+        setClusterOrigin(null);
         setIncident({
           coordinates: feature.geometry.coordinates,
           properties: feature.properties
@@ -161,6 +168,7 @@ export default function CrimeMap({
 
   const resetView = useCallback(() => {
     setClusterPopup(null);
+    setClusterOrigin(null);
     setIncident(null);
     const map = mapRef.current?.getMap ? mapRef.current.getMap() : mapRef.current;
     if (map && map.easeTo) {
@@ -255,8 +263,9 @@ export default function CrimeMap({
           type="geojson"
           data={geojson}
           cluster={true}
-          clusterMaxZoom={11}
+          clusterMaxZoom={23}
           clusterRadius={35}
+          maxzoom={24}
         >
           <Layer {...clusterLayer} />
           <Layer {...clusterCountLayer} />
@@ -354,6 +363,7 @@ export default function CrimeMap({
                     <div
                       key={item.properties?.id || idx}
                       onClick={() => {
+                        setClusterOrigin(clusterPopup);
                         setClusterPopup(null);
                         setIncident(item);
                       }}
@@ -445,7 +455,10 @@ export default function CrimeMap({
             longitude={activeIncident.coordinates[0]}
             latitude={activeIncident.coordinates[1]}
             anchor="bottom"
-            onClose={() => setIncident(null)}
+            onClose={() => {
+              setIncident(null);
+              setClusterOrigin(null);
+            }}
             closeOnClick={false}
             offset={12}
           >
@@ -459,19 +472,45 @@ export default function CrimeMap({
                   marginBottom: '8px'
                 }}
               >
-                <span
-                  className="clean-badge"
-                  style={{
-                    backgroundColor: popupStyle?.bg,
-                    border: `1px solid ${popupStyle?.border}`,
-                    color: popupStyle?.color
-                  }}
-                >
-                  {activeIncident.properties?.type || 'Händelse'}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {clusterOrigin && (
+                    <button
+                      onClick={() => {
+                        setClusterPopup(clusterOrigin);
+                        setIncident(null);
+                        setClusterOrigin(null);
+                      }}
+                      className="clean-frosted-btn"
+                      style={{
+                        padding: '2px 8px',
+                        fontSize: '11px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                      title="Tillbaka till listan"
+                    >
+                      <span>← Lista</span>
+                    </button>
+                  )}
+                  <span
+                    className="clean-badge"
+                    style={{
+                      backgroundColor: popupStyle?.bg,
+                      border: `1px solid ${popupStyle?.border}`,
+                      color: popupStyle?.color
+                    }}
+                  >
+                    {activeIncident.properties?.type || 'Händelse'}
+                  </span>
+                </div>
 
                 <button
-                  onClick={() => setIncident(null)}
+                  onClick={() => {
+                    setIncident(null);
+                    setClusterOrigin(null);
+                  }}
                   className="clean-frosted-btn clean-frosted-btn-circle"
                   style={{ width: '24px', height: '24px' }}
                   title="Stäng"
