@@ -205,6 +205,15 @@ const API_BASE_URL =
   import.meta.env?.VITE_API_URL ??
   (import.meta.env?.DEV ? "http://localhost:8000" : "");
 
+export async function fetchStatistics(startDate, endDate, signal) {
+  const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const response = await fetch(`${API_BASE_URL}/incidents/statistics?${query}`, { signal });
+  if (!response.ok) throw new Error(`Statistiken kunde inte hämtas (HTTP ${response.status}).`);
+  const rows = await response.json();
+  if (!Array.isArray(rows)) throw new Error('API:et returnerade ett oväntat svar.');
+  return rows;
+}
+
 /**
  * Filter fallback data offline when backend is not accessible.
  */

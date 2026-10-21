@@ -4,6 +4,7 @@ import Sidebar from './components/sidebar/Sidebar';
 import DateBar from './components/datebar/DateBar';
 import { incidentsToGeoJSON } from './utils/geojson';
 import { fetchIncidents, formatDate } from './api/incidents';
+import StatisticsPage from './components/statistics/StatisticsPage';
 
 const MAP_STYLES = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -11,6 +12,12 @@ const MAP_STYLES = {
 };
 
 export default function App() {
+  const [showStatistics, setShowStatistics] = useState(() => window.location.hash === '#statistics');
+  useEffect(() => {
+    const onHashChange = () => setShowStatistics(window.location.hash === '#statistics');
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
   const [incidents, setIncidents] = useState([]);
   const [selectedCounty, setSelectedCounty] = useState('Alla');
   const [selectedType, setSelectedType] = useState('Alla');
@@ -38,6 +45,7 @@ export default function App() {
 
   // Fetch incidents from backend when date range, county or incident type filter changes
   useEffect(() => {
+    if (showStatistics) return;
     let mounted = true;
     async function loadData() {
       setLoading(true);
@@ -63,7 +71,7 @@ export default function App() {
     return () => {
       mounted = false;
     };
-  }, [dateRange, selectedCounty, selectedType]);
+  }, [dateRange, selectedCounty, selectedType, showStatistics]);
 
   // Filter incidents based on free text search term
   const filteredIncidents = useMemo(() => {
@@ -106,6 +114,10 @@ export default function App() {
       properties: incident
     });
   }, []);
+
+  if (showStatistics) {
+    return <StatisticsPage theme={theme} onToggleTheme={toggleTheme} />;
+  }
 
   return (
     <div
