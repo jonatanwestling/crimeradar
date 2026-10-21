@@ -214,7 +214,7 @@ export default function CrimeMap({
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
           </svg>
-          Återställ
+          <span className="clean-hud-reset-text">Återställ</span>
         </button>
 
         {/* MCP Server Button */}
@@ -281,13 +281,14 @@ export default function CrimeMap({
             onClose={() => setClusterPopup(null)}
             closeOnClick={false}
             offset={14}
-            maxWidth="330px"
+            maxWidth="min(330px, calc(100vw - 24px))"
           >
             <div
               className="clean-frosted-popup-card"
               style={{
-                width: '310px',
-                maxHeight: '380px',
+                width: '100%',
+                maxWidth: '310px',
+                maxHeight: 'min(380px, 60vh)',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '12px 14px',
@@ -461,6 +462,7 @@ export default function CrimeMap({
             }}
             closeOnClick={false}
             offset={12}
+            maxWidth="min(330px, calc(100vw - 24px))"
           >
             <div className="clean-frosted-popup-card">
               {/* Header */}

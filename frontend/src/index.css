@@ -113,10 +113,10 @@ body,
 
 @media (max-width: 640px) {
   .clean-frosted-sidebar {
-    top: 8px;
+    top: max(8px, env(safe-area-inset-top, 8px));
     left: 8px;
     right: 8px;
-    bottom: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 8px));
     width: auto;
     max-width: none;
     border-radius: 14px;
@@ -147,6 +147,16 @@ body,
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+@media (max-width: 640px) {
+  .clean-frosted-launcher {
+    top: max(10px, env(safe-area-inset-top, 10px));
+    left: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
 }
 
 .clean-frosted-launcher:hover {
@@ -313,11 +323,15 @@ body,
 
 @media (max-width: 640px) {
   .clean-frosted-hud {
-    top: auto;
-    bottom: 24px;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
+    top: max(10px, env(safe-area-inset-top, 10px));
+    right: 10px;
+    padding: 5px 8px;
+    gap: 6px;
+    font-size: 10.5px;
+  }
+
+  .clean-hud-reset-text {
+    display: none;
   }
 }
 
@@ -332,6 +346,13 @@ body,
   overflow: hidden !important;
   margin-right: 16px !important;
   margin-bottom: 20px !important;
+}
+
+@media (max-width: 640px) {
+  .maplibregl-ctrl-group {
+    margin-right: 10px !important;
+    margin-bottom: 72px !important;
+  }
 }
 
 .maplibregl-ctrl-group button {
@@ -366,6 +387,8 @@ body,
 
 .clean-frosted-popup-card {
   width: 290px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
   background: var(--glass-base);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -376,6 +399,14 @@ body,
   border-radius: 12px;
   padding: 14px 16px;
   color: var(--text-main);
+}
+
+@media (max-width: 640px) {
+  .clean-frosted-popup-card {
+    padding: 12px;
+    max-height: 65vh;
+    overflow-y: auto;
+  }
 }
 
 /* Clean Scrollbar */
@@ -435,6 +466,26 @@ body,
 [data-theme="light"] .clean-frosted-modal {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 640px) {
+  .clean-frosted-modal-backdrop {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .clean-frosted-modal {
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .clean-frosted-modal-header {
+    padding: 12px 14px;
+  }
+
+  .clean-frosted-modal-body {
+    padding: 14px;
+  }
 }
 
 .clean-frosted-modal-header {
@@ -509,7 +560,6 @@ body,
   position: absolute;
   bottom: 24px;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -521,18 +571,29 @@ body,
   backdrop-filter: blur(14px);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  transform: translateZ(0) translateX(-50%);
+  -webkit-transform: translateZ(0) translateX(-50%);
   transition: transform 0.2s ease, opacity 0.2s ease, background 0.15s ease;
   user-select: none;
 }
 
 @media (max-width: 640px) {
   .clean-frosted-bottom-bar {
-    bottom: 16px;
+    bottom: max(14px, env(safe-area-inset-bottom, 14px));
     padding: 5px 8px;
-    gap: 6px;
-    max-width: calc(100vw - 32px);
+    gap: 5px;
+    max-width: calc(100vw - 20px);
+    transform: translateZ(0) translateX(-50%);
+    -webkit-transform: translateZ(0) translateX(-50%);
+  }
+
+  .clean-frosted-date-badge {
+    padding: 5px 9px;
+    gap: 5px;
+  }
+
+  .clean-frosted-date-text {
+    font-size: 11px;
   }
 }
 
@@ -617,7 +678,10 @@ body,
   left: 50%;
   transform: translateX(-50%);
   width: 324px;
-  max-width: calc(100vw - 24px);
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-sizing: border-box;
   background: var(--glass-base);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
@@ -631,6 +695,14 @@ body,
   gap: 11px;
   animation: datePickerSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+}
+
+@media (max-width: 640px) {
+  .clean-frosted-date-picker-popover {
+    width: min(340px, calc(100vw - 16px));
+    padding: 12px 10px;
+    bottom: calc(100% + 8px);
+  }
 }
 
 @keyframes datePickerSlideIn {

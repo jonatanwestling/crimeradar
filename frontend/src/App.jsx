@@ -21,7 +21,12 @@ export default function App() {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth > 768;
+    }
+    return true;
+  });
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [mcpModalOpen, setMcpModalOpen] = useState(false);
 
@@ -107,6 +112,10 @@ export default function App() {
       coordinates: [incident.longitude, incident.latitude],
       properties: incident
     });
+    // On mobile, automatically collapse sidebar so user can see the marker on the map
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      setSidebarOpen(false);
+    }
   }, []);
 
   return (
