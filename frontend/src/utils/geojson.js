@@ -39,10 +39,10 @@ export function incidentsToGeoJSON(incidents = []) {
     const baseLng = validIncidents[indices[0]].lng;
     const cosLat = Math.cos((baseLat * Math.PI) / 180);
 
-    // If 2 to 8 points, arrange in a clean circle (~60m radius)
+    // If 2 to 8 points, arrange in a clean circle (~180m radius, clearly distinct at city zoom)
     // If > 8 points, use Fermat spiral / sunflower distribution
     if (n <= 8) {
-      const radiusDeg = 0.00055; // ~60 meters
+      const radiusDeg = 0.0016; // ~180 meters
       indices.forEach((idx, i) => {
         const angle = (2 * Math.PI * i) / n;
         const dLat = radiusDeg * Math.sin(angle);
@@ -51,7 +51,7 @@ export function incidentsToGeoJSON(incidents = []) {
       });
     } else {
       const goldenAngle = 2.3999632; // ~137.5 degrees
-      const c = 0.00025;
+      const c = 0.00065;
       indices.forEach((idx, i) => {
         const r = c * Math.sqrt(i + 1);
         const angle = i * goldenAngle;
