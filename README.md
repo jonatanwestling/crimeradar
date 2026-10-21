@@ -17,13 +17,8 @@ database. This creates a persistent archive of police-reported events
 and enables the application to provide historical queries beyond the
 retention limit of the API.
 
-In addition to police reported events, historical crime statistics will
-be scraped from Brå (<https://bra.se/>) and then injected into the
-database. These data sources allow the application to present both
-individual incidents and aggregated crime statistics. Users can select
-incidents on the map to view additional information, while a separate
-statistics interface provides an overview of crime trends and other
-aggregated data.
+In addition to the map displaying events, a MCP server will be available
+that allows agents to connect to, and query the events data.
 
 ## Setup
 
@@ -53,10 +48,11 @@ Deploy the full production stack (Frontend, Backend, and Nginx reverse proxy) wi
 ```
 
 This starts:
+
 - **Frontend**: Port `3000` in Docker (compiled React served via internal Nginx)
 - **Backend API**: Port `8000` in Docker (FastAPI)
 - **Collector**: Background service in Docker
-- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents` to 8000)
+- **Host Nginx**: Port `80` (reverse proxies `/` to 3000, and `/incidents`, `/mcp` to 8000)
 
 Useful production commands:
 
@@ -97,3 +93,26 @@ psql -U radar_user -d crime_radar -h localhost -W
 
 Now enter the password for the radar_user when prompted. The database
 connection string is configured in `.env`.
+
+## Model Context Protocol Server
+
+The backend provides a built-in MCP server using Server-Sent Events (SSE) that allows AI agents to query and filter events.
+
+### Endpoint
+
+`http://ip:8000/mcp/sse`
+
+### Agent Configuration
+
+Add the following to your agent MCP configuration file:
+
+```json
+{
+  "mcpServers": {
+    "crime-radar-sweden": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp/sse"]
+    }
+  }
+}
+```
