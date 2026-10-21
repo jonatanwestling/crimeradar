@@ -85,9 +85,7 @@ export const INCIDENT_TYPES = [
   "Övrigt",
 ];
 
-const API_BASE_URL =
-  import.meta.env?.VITE_API_URL ??
-  (import.meta.env?.DEV ? "http://localhost:8000" : "");
+const API_BASE_URL = import.meta.env?.VITE_API_URL ?? "";
 
 /**
  * Formats a Date object or date string into 'YYYY-MM-DD' (local calendar date).

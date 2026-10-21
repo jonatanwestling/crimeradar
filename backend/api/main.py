@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from datetime import date
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import sys
@@ -23,6 +24,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Enable CORS for local frontend development and external API consumers
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Rate limit /mcp endpoints to 10 req/min per IP
 app.add_middleware(InMemoryRateLimiterMiddleware, prefix="/mcp")
