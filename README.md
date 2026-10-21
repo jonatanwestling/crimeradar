@@ -94,13 +94,14 @@ psql -U radar_user -d crime_radar -h localhost -W
 Now enter the password for the radar_user when prompted. The database
 connection string is configured in `.env`.
 
-## Model Context Protocol Server
+## Model Context Protocol (MCP) Server
 
-The backend provides a built-in MCP server using Server-Sent Events (SSE) that allows AI agents to query and filter events.
+The backend provides a built-in MCP server using Server-Sent Events (SSE) that allows AI agents to query and filter police events across Sweden.
 
-### Endpoint
+### Endpoints
 
-`http://ip:8000/mcp/sse`
+- **Production SSE**: `https://crimeradar.hb6.se/mcp/sse`
+- **Local Development**: `http://127.0.0.1:8000/mcp/sse`
 
 ### Agent Configuration
 
@@ -111,8 +112,20 @@ Add the following to your agent MCP configuration file:
   "mcpServers": {
     "crime-radar-sweden": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp/sse"]
+      "args": ["-y", "mcp-remote", "https://crimeradar.hb6.se/mcp/sse"]
     }
   }
 }
 ```
+
+### Available MCP Tools
+
+- **`search_events`**: Search and filter police incidents by municipality/location, incident category (e.g. `Stöld`, `Trafikolycka`, `Brand`), date/date-range, and keyword queries.
+- **`list_incident_types`**: Returns all distinct incident types available in the database.
+
+### Agent & Bot Discovery Files
+
+- **LLM Context (`llms.txt`)**: [`https://crimeradar.hb6.se/llms.txt`](https://crimeradar.hb6.se/llms.txt)
+- **Agent Capabilities (`capabilities.txt`)**: [`https://crimeradar.hb6.se/capabilities.txt`](https://crimeradar.hb6.se/capabilities.txt)
+- **Robots Directives (`robots.txt`)**: [`https://crimeradar.hb6.se/robots.txt`](https://crimeradar.hb6.se/robots.txt)
+- **API Documentation**: [`https://crimeradar.hb6.se/docs`](https://crimeradar.hb6.se/docs)

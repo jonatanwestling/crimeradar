@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CrimeMap from './components/map/CrimeMap';
 import Sidebar from './components/sidebar/Sidebar';
+import McpModal from './components/mcp/McpModal';
 import DateBar from './components/datebar/DateBar';
 import { incidentsToGeoJSON } from './utils/geojson';
 import { fetchIncidents, formatDate } from './api/incidents';
@@ -22,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState(null);
+  const [mcpModalOpen, setMcpModalOpen] = useState(false);
 
   // Initialize theme from system preference or default to dark
   const [theme, setTheme] = useState(() => {
@@ -142,6 +144,7 @@ export default function App() {
         onToggleOpen={() => setSidebarOpen((prev) => !prev)}
         selectedIncidentId={selectedIncident?.properties?.id}
         onSelectIncident={handleSelectIncidentFromFeed}
+        onOpenMcp={() => setMcpModalOpen(true)}
       />
 
       {/* Floating Bottom Date Navigation Bar */}
@@ -160,6 +163,13 @@ export default function App() {
         selectedIncident={selectedIncident}
         onSelectIncident={setSelectedIncident}
         totalIncidents={filteredIncidents.length}
+        onOpenMcp={() => setMcpModalOpen(true)}
+      />
+
+      {/* Model Context Protocol (MCP) & AI Agent Modal */}
+      <McpModal
+        isOpen={mcpModalOpen}
+        onClose={() => setMcpModalOpen(false)}
       />
     </div>
   );

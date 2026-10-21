@@ -57,7 +57,8 @@ export default function CrimeMap({
   isDark = true,
   selectedIncident: controlledIncident,
   onSelectIncident,
-  totalIncidents = 0
+  totalIncidents = 0,
+  onOpenMcp
 }) {
   const mapRef = useRef(null);
   const [internalIncident, setInternalIncident] = useState(null);
@@ -170,6 +171,33 @@ export default function CrimeMap({
           </svg>
           Återställ
         </button>
+
+        {/* MCP Server Button */}
+        {onOpenMcp && (
+          <button
+            onClick={onOpenMcp}
+            title="Model Context Protocol (MCP) & AI Agent Guide"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '2px 4px',
+              fontSize: '11px',
+              fontFamily: 'var(--sans)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              borderLeft: '1px solid var(--glass-border-subtle)',
+              paddingLeft: '8px'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-main)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+          >
+            <span className="clean-radar-dot" style={{ background: '#38bdf8', boxShadow: '0 0 5px #38bdf8' }} />
+            <span>MCP</span>
+          </button>
+        )}
       </div>
 
       <Map

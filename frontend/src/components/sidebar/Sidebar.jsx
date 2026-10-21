@@ -59,7 +59,8 @@ export default function Sidebar({
   isOpen = true,
   onToggleOpen,
   selectedIncidentId = null,
-  onSelectIncident
+  onSelectIncident,
+  onOpenMcp
 }) {
   const countyList = useMemo(() => {
     return [
@@ -178,6 +179,27 @@ export default function Sidebar({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {/* MCP / AI Agent Guide Button */}
+              <button
+                onClick={onOpenMcp}
+                title="MCP Server & AI Agent Guide"
+                className="clean-frosted-btn clean-frosted-btn-circle"
+                aria-label="MCP Server & AI Agent Guide"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                  <rect x="9" y="9" width="6" height="6" />
+                  <line x1="9" y1="1" x2="9" y2="4" />
+                  <line x1="15" y1="1" x2="15" y2="4" />
+                  <line x1="9" y1="20" x2="9" y2="23" />
+                  <line x1="15" y1="20" x2="15" y2="23" />
+                  <line x1="20" y1="9" x2="23" y2="9" />
+                  <line x1="20" y1="14" x2="23" y2="14" />
+                  <line x1="1" y1="9" x2="4" y2="9" />
+                  <line x1="1" y1="14" x2="4" y2="14" />
+                </svg>
+              </button>
+
               {/* Theme Toggle Button */}
               <button
                 onClick={onToggleTheme}
@@ -504,6 +526,36 @@ export default function Sidebar({
                 );
               })
             )}
+          </div>
+
+          {/* MCP Server Bottom Banner */}
+          <div className="clean-frosted-mcp-banner">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="clean-radar-dot" style={{ background: '#38bdf8', boxShadow: '0 0 6px #38bdf8' }} />
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-main)', lineHeight: 1.2 }}>
+                  MCP Server Active
+                </div>
+                <div style={{ fontSize: '10px', color: 'var(--text-dim)', lineHeight: 1.2 }}>
+                  Koppla AI & LLM
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={onOpenMcp}
+              className="clean-frosted-btn"
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                gap: '4px'
+              }}
+            >
+              <span>Guide</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
           </div>
         </aside>
       )}
