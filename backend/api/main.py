@@ -110,15 +110,16 @@ def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
             longitude,
             latitude
         FROM 
-            public.police_events
+            v_police_events
         WHERE
-            location_name ILIKE %s
+            (location_name ILIKE %s OR raw_location_name ILIKE %s)
             AND (datetime AT TIME ZONE 'Europe/Stockholm')::date
             BETWEEN %s AND %s
         ORDER BY
              datetime DESC
         """,
         (
+            county_param,
             county_param,
             request.start_date,
             request.end_date,
@@ -145,7 +146,7 @@ def national_incidents(request: NationalIncidentsRequest, conn=Depends(get_conn)
             longitude,
             latitude
         FROM
-            public.police_events
+            v_police_events
         WHERE (datetime AT TIME ZONE 'Europe/Stockholm')::date
               BETWEEN %s AND %s
         ORDER BY datetime DESC
@@ -179,7 +180,7 @@ def national_incidents_by_type(
             location_name,
             longitude,
             latitude
-        FROM public.police_events
+        FROM v_police_events
         WHERE type ILIKE %s
           AND (datetime AT TIME ZONE 'Europe/Stockholm')::date
               BETWEEN %s AND %s
