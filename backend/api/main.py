@@ -63,6 +63,30 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/incidents/statistics")
+def daily_event_statistics(
+    start_date: date,
+    end_date: date,
+    incident_type: str | None = None,
+    conn=Depends(get_conn),
+):
+    validate_date_range(start_date, end_date)
+
+    sql = """
+        SELECT date, type, number_of_events
+        FROM public.daily_event_statistics
+        WHERE date BETWEEN %s AND %s
+    """
+    params = [start_date, end_date]
+
+    if incident_type is not None:
+        sql += " AND type = %s"
+        params.append(incident_type)
+
+    sql += " ORDER BY date, type"
+    return conn.execute(sql, params).fetchall()
+
+
 @app.post("/incidents/county")
 def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
     validate_date_range(request.start_date, request.end_date)

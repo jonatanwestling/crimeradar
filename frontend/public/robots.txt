@@ -1,0 +1,16 @@
+# Robots.txt for Crime Radar Sweden (crimeradar.hb6.se)
+# Autonomous AI agents, LLMs, and web crawlers are explicitly welcomed and allowed to access this site.
+
+User-agent: *
+Allow: /
+
+# Agent & Bot Guidelines:
+# We welcome AI agents, LLMs, and researchers to access and query our public data.
+# For structured AI context, MCP configuration, and tool specifications, please consult:
+# - LLM Documentation: https://crimeradar.hb6.se/llms.txt
+# - Agent Capabilities: https://crimeradar.hb6.se/capabilities.txt
+# - MCP Server (SSE): https://crimeradar.hb6.se/mcp/sse
+# - REST API Docs: https://crimeradar.hb6.se/docs
+
+Sitemap: https://crimeradar.hb6.se/sitemap.xml
+
