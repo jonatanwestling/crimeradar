@@ -120,6 +120,7 @@ export default function Sidebar({
       {/* Floating Transparent Frosted Sidebar */}
       {isOpen && (
         <aside className="clean-frosted-sidebar">
+          <a href="#statistics" className="statistics-link">Statistik →</a>
           {/* Header */}
           <div
             style={{

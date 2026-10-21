@@ -1,0 +1,65 @@
+.statistics-page { height: 100dvh; overflow-y: auto; background: #121214; color: var(--text-main); user-select: text; }
+.statistics-page[data-theme="light"] { background: #fafafa; }
+.statistics-content { max-width: 1100px; margin: auto; padding: 24px 32px 48px; }
+.statistics-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid var(--glass-border); }
+.statistics-nav a, .statistics-link { color: var(--text-main); text-decoration: none; font-size: 14px; }
+.statistics-link { display: block; padding: 14px 16px; border-bottom: 1px solid var(--glass-border); }
+.statistics-nav span { color: var(--text-muted); font: 11px var(--mono); letter-spacing: .08em; }
+.statistics-heading { margin: 48px 0 28px; }
+.statistics-eyebrow { color: var(--radar-green); font: 12px var(--mono); letter-spacing: .12em; }
+.statistics-heading h1 { font-size: clamp(28px, 5vw, 42px); letter-spacing: -.04em; margin: 12px 0; }
+.statistics-heading > p:last-child, .statistics-note, .statistics-chart-header p { color: var(--text-muted); line-height: 1.6; }
+.statistics-nav button, .statistics-filters > button, .statistics-date-trigger { font: inherit; color: var(--text-main); background: var(--glass-input-bg); border: 1px solid var(--glass-border); border-radius: 8px; min-height: 44px; padding: 8px 12px; box-sizing: border-box; }
+.statistics-page button { cursor: pointer; }
+.statistics-nav button:hover, .statistics-date-trigger:hover, .statistics-nav a:hover, .statistics-link:hover { background: var(--glass-card-hover); }
+.statistics-page :focus-visible, .statistics-link:focus-visible { outline: 2px solid var(--radar-green); outline-offset: 4px; }
+.statistics-page button:disabled { opacity: .5; cursor: default; }
+.statistics-filters { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; margin-bottom: 28px; }
+.statistics-page label { display: flex; flex-direction: column; gap: 8px; color: var(--text-muted); font-size: 13px; }
+.statistics-page .statistics-primary { background: var(--radar-green); color: #09090b; font-weight: 600; padding-inline: 24px; }
+.statistics-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+.statistics-summary > div { padding: 22px; border: 1px solid var(--glass-border); background: var(--glass-card-bg); border-radius: 12px; }
+.statistics-summary span { display: block; color: var(--text-muted); font-size: 13px; }
+.statistics-summary strong { display: block; font-size: 32px; font-weight: 600; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.statistics-chart-card { border: 1px solid var(--glass-border); border-radius: 16px; background: var(--glass-card-bg); padding: 24px; }
+.statistics-chart-header { display: flex; justify-content: space-between; align-items: start; gap: 24px; }
+.statistics-chart-header h2 { font-size: 19px; margin: 0; }
+.statistics-chart-header p { font-size: 13px; margin-bottom: 0; }
+.statistics-plot-scroll { overflow-x: auto; }
+.statistics-plot { display: block; width: 100%; min-width: 560px; }
+.statistics-plot-container { position: relative; min-width: 560px; }
+.statistics-tooltip { position: absolute; top: 8px; pointer-events: none; padding: 12px 16px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-base); backdrop-filter: var(--glass-blur); box-shadow: var(--glass-shadow); font-size: 13px; max-width: 260px; z-index: 1; }
+.statistics-tooltip > strong { display: block; margin-bottom: 8px; }
+.statistics-tooltip > div { margin-top: 6px; overflow-wrap: anywhere; }
+.statistics-date-picker { position: relative; }
+.statistics-date-picker .clean-frosted-date-picker-popover { top: calc(100% + 12px); bottom: auto; left: 0; transform: none; animation: none; max-width: calc(100vw - 64px); }
+.statistics-type-picker { margin-top: 24px; }
+.statistics-type-picker summary { cursor: pointer; padding: 12px 0; }
+.statistics-type-picker fieldset { border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; max-height: 220px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 16px; }
+.statistics-type-picker legend { color: var(--text-muted); font-size: 13px; padding-inline: 8px; }
+.statistics-type-picker label { display: flex; flex-direction: row; align-items: center; gap: 10px; cursor: pointer; min-height: 40px; color: var(--text-main); }
+.statistics-type-picker input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--radar-green); }
+.statistics-legends { display: flex; flex-wrap: wrap; gap: 12px 20px; margin: 20px 0 8px; }
+.statistics-legends > span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; }
+.statistics-table-scroll { overflow-x: auto; }
+.statistics-axis line { stroke: var(--glass-border); }
+.statistics-axis text, .statistics-axis-label { fill: var(--text-muted); font-size: 13px; }
+.statistics-message { padding: 48px 24px; border: 1px solid var(--glass-border); border-radius: 12px; text-align: center; }
+.statistics-note { font-size: 12px; margin-top: 24px; }
+.statistics-table { margin-top: 24px; }
+.statistics-table summary { cursor: pointer; padding: 12px 0; }
+.statistics-table table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.statistics-table caption { text-align: left; padding: 16px 0; color: var(--text-muted); }
+.statistics-table th, .statistics-table td { padding: 12px; border-bottom: 1px solid var(--glass-border); text-align: left; }
+.statistics-table td { font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) {
+  .statistics-content { padding: 16px 16px 32px; }
+  .statistics-nav span { display: none; }
+  .statistics-heading { margin-top: 32px; }
+  .statistics-filters label { flex: 1; min-width: 130px; }
+  .statistics-summary { grid-template-columns: 1fr; gap: 8px; }
+  .statistics-summary > div { display: flex; align-items: center; justify-content: space-between; padding: 16px; }
+  .statistics-summary strong { font-size: 26px; margin-top: 0; }
+  .statistics-chart-card { padding: 16px; }
+  .statistics-chart-header { flex-direction: column; gap: 20px; }
+}

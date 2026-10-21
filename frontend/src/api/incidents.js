@@ -87,6 +87,15 @@ export const INCIDENT_TYPES = [
 
 const API_BASE_URL = import.meta.env?.VITE_API_URL ?? "";
 
+export async function fetchStatistics(startDate, endDate, signal) {
+  const query = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const response = await fetch(`${API_BASE_URL}/incidents/statistics?${query}`, { signal });
+  if (!response.ok) throw new Error(`Statistiken kunde inte hämtas (HTTP ${response.status}).`);
+  const rows = await response.json();
+  if (!Array.isArray(rows)) throw new Error('API:et returnerade ett oväntat svar.');
+  return rows;
+}
+
 /**
  * Formats a Date object or date string into 'YYYY-MM-DD' (local calendar date).
  *
