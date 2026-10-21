@@ -17,13 +17,8 @@ database. This creates a persistent archive of police-reported events
 and enables the application to provide historical queries beyond the
 retention limit of the API.
 
-In addition to police reported events, historical crime statistics will
-be scraped from Brå (<https://bra.se/>) and then injected into the
-database. These data sources allow the application to present both
-individual incidents and aggregated crime statistics. Users can select
-incidents on the map to view additional information, while a separate
-statistics interface provides an overview of crime trends and other
-aggregated data.
+In addition to the map displaying events, a MCP server will be available
+that allows agents to connect to, and query the events data.
 
 ## Setup
 
@@ -103,14 +98,13 @@ connection string is configured in `.env`.
 
 The backend provides a built-in MCP server using Server-Sent Events (SSE) that allows AI agents to query and filter events.
 
-### Endpoints
+### Endpoint
 
-- **Local Development**: `http://127.0.0.1:8000/mcp/sse`
-- **Production**: `http://<SERVER_IP_OR_DOMAIN>/mcp/sse`
+`http://ip:8000/mcp/sse`
 
 ### Agent Configuration
 
-Add the following to your agent or client MCP configuration file:
+Add the following to your agent MCP configuration file:
 
 ```json
 {

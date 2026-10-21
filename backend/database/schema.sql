@@ -11,16 +11,3 @@ CREATE TABLE IF NOT EXISTS police_events (
     latitude DECIMAL(9,6),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
-
--- Table to store the additional text information for a police event
-CREATE TABLE IF NOT EXISTS police_event_details (
-    url varchar(255) PRIMARY KEY REFERENCES police_events(url) ON DELETE CASCADE,
-    title varchar(255) NOT NULL,
-    short_description TEXT,
-    description TEXT,
-    text_by varchar(255),
-    published_text varchar(255),
-    updated_text varchar(255),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
