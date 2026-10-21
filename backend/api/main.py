@@ -16,7 +16,9 @@ async def lifespan(app: FastAPI):
     yield
     pool.close()
 
+
 app = FastAPI(lifespan=lifespan)
+
 
 # Requesttypes
 class CountyIncidentRequest(BaseModel):
@@ -30,13 +32,18 @@ class NationalIncidentsRequest(BaseModel):
     end_date: date
 
 
-
-
-
 class NationalIncidentTypeRequest(BaseModel):
     indicent_type: str
     start_date: date
     end_date: date
+
+
+def validate_date_range(start_date: date, end_date: date):
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400,
+            detail="start_date cannot be later then end_date",
+        )
 
 
 # Endpoints
@@ -46,22 +53,59 @@ def health():
 
 
 @app.post("/incidents/county")
-def county_incidents(request: CountyIncidentRequest):
+def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
+    validate_date_range(request.start_date, request.end_date)
 
-    return {
-        "county": request.county,
-        "start_date": request.start_date,
-        "end_date": request.end_date,
-    }
+    # County types in DB are "xxx län" use ILIKE to query by just "stockholm"
+    rows = conn.execute(
+        """
+        SELECT
+            id,
+            datetime,
+            name,
+            summary,
+            url,
+            type,
+            location_name,
+            longitude,
+            latitude
+        FROM 
+            public.police_events
+        WHERE
+            location_name ILIKE %s
+            AND (datetime AT TIME ZONE 'Europe/Stockholm')::date
+            BETWEEN %s AND %s
+        ORDER BY
+             datetime DESC
+        """,
+        (
+            request.county,
+            request.start_date,
+            request.end_date,
+        ),
+    ).fetchall()
+
+    return rows
 
 
 @app.post("/incidents/national")
 def national_incidents(request: NationalIncidentsRequest, conn=Depends(get_conn)):
+    validate_date_range(request.start_date, request.end_date)
+
     rows = conn.execute(
         """
-        SELECT id, datetime, name, summary, url, type,
-               location_name, longitude, latitude
-        FROM public.police_events
+        SELECT 
+            id,
+            datetime,
+            name,
+            summary,
+            url,
+            type,
+            location_name,
+            longitude,
+            latitude
+        FROM
+            public.police_events
         WHERE (datetime AT TIME ZONE 'Europe/Stockholm')::date
               BETWEEN %s AND %s
         ORDER BY datetime DESC
@@ -74,8 +118,31 @@ def national_incidents(request: NationalIncidentsRequest, conn=Depends(get_conn)
 
 @app.post("/incidents/national/type")
 def national_incidents_by_type(request: NationalIncidentTypeRequest):
-    return {
-        "incident_type": request.incident_type,
-        "start_date": request.start_date,
-        "end_date": request.end_date,
-    }
+    validate_date_range(request.start_date, request.end_date)
+
+    rows = conn.execute(
+        """
+        SELECT
+            id,
+            datetime,
+            name,
+            summary,
+            url,
+            type,
+            location_name,
+            longitude,
+            latitude
+        FROM public.police_events
+        WHERE type ILIKE %s
+          AND (datetime AT TIME ZONE 'Europe/Stockholm')::date
+              BETWEEN %s AND %s
+        ORDER BY datetime DESC
+        """,
+        (
+            request.incident_type,
+            request.start_date,
+            request.end_date,
+        ),
+    ).fetchall()
+
+    return rows
