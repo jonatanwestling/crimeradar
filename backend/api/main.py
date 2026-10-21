@@ -3,10 +3,15 @@ from datetime import date
 from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 
-try:
-    from db import get_conn, pool
-except ImportError:
-    from app.db import get_conn, pool
+import sys
+from pathlib import Path
+
+# Ensure backend/api directory is on sys.path
+sys.path.append(str(Path(__file__).resolve().parent))
+
+from db import get_conn, pool
+from rate_limiter import InMemoryRateLimiterMiddleware
+from mcp_server import get_mcp_sse_app
 
 
 # connect to DB at startup, close at exit
@@ -17,6 +22,13 @@ async def lifespan(app: FastAPI):
     pool.close()
 
 app = FastAPI(lifespan=lifespan)
+
+# Rate limit /mcp endpoints to 10 req/min per IP
+app.add_middleware(InMemoryRateLimiterMiddleware, prefix="/mcp")
+
+# Mount MCP SSE application at /mcp
+app.mount("/mcp", get_mcp_sse_app())
+
 
 # Requesttypes
 class CountyIncidentRequest(BaseModel):

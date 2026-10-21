@@ -2,3 +2,4 @@ fastapi
 uvicorn
 psycopg[binary,pool]
 python-dotenv
+mcp>=1.0.0

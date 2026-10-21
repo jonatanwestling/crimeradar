@@ -12,18 +12,3 @@ CREATE TABLE IF NOT EXISTS police_events (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_police_events_url ON police_events(url);
-
--- Table to store the additional text information for a police event
-CREATE TABLE IF NOT EXISTS police_event_details (
-    url varchar(255) PRIMARY KEY,
-    title varchar(255) NOT NULL,
-    short_description TEXT,
-    description TEXT,
-    text_by varchar(255),
-    published_text varchar(255),
-    updated_text varchar(255),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
