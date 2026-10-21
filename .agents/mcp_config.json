@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "crime-radar-sweden": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote",
+                "https://crimeradar.hb6.se/mcp/sse"
+            ]
+        }
+    }
+}
