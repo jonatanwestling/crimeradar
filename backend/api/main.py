@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import date
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 
 import sys
@@ -44,7 +44,7 @@ class NationalIncidentsRequest(BaseModel):
 
 
 class NationalIncidentTypeRequest(BaseModel):
-    indicent_type: str
+    incident_type: str
     start_date: date
     end_date: date
 
@@ -67,7 +67,7 @@ def health():
 def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
     validate_date_range(request.start_date, request.end_date)
 
-    # County types in DB are "xxx län" use ILIKE to query by just "stockholm"
+    # Case insensitive location name
     rows = conn.execute(
         """
         SELECT
@@ -128,7 +128,9 @@ def national_incidents(request: NationalIncidentsRequest, conn=Depends(get_conn)
 
 
 @app.post("/incidents/national/type")
-def national_incidents_by_type(request: NationalIncidentTypeRequest):
+def national_incidents_by_type(
+    request: NationalIncidentTypeRequest, conn=Depends(get_conn)
+):
     validate_date_range(request.start_date, request.end_date)
 
     rows = conn.execute(
