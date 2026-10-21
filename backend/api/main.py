@@ -67,7 +67,12 @@ def health():
 def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
     validate_date_range(request.start_date, request.end_date)
 
-    # Case insensitive location name
+    # County types in DB are often "xxx län", allow substring/case-insensitive match
+    county_param = (
+        request.county
+        if "%" in request.county
+        else f"%{request.county.strip()}%"
+    )
     rows = conn.execute(
         """
         SELECT
@@ -90,7 +95,7 @@ def county_incidents(request: CountyIncidentRequest, conn=Depends(get_conn)):
              datetime DESC
         """,
         (
-            request.county,
+            county_param,
             request.start_date,
             request.end_date,
         ),
@@ -133,6 +138,11 @@ def national_incidents_by_type(
 ):
     validate_date_range(request.start_date, request.end_date)
 
+    type_param = (
+        request.incident_type
+        if "%" in request.incident_type
+        else f"%{request.incident_type.strip()}%"
+    )
     rows = conn.execute(
         """
         SELECT
@@ -152,7 +162,7 @@ def national_incidents_by_type(
         ORDER BY datetime DESC
         """,
         (
-            request.incident_type,
+            type_param,
             request.start_date,
             request.end_date,
         ),
