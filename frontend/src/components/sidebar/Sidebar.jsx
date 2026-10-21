@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { SWEDISH_COUNTIES, INCIDENT_TYPES } from '../../api/incidents';
+import { SWEDISH_COUNTIES, INCIDENT_TYPES, formatDate } from '../../api/incidents';
 
 /**
  * Minimalist neutral incident category styling (no blue tint, no heavy glow)
@@ -48,6 +48,8 @@ export default function Sidebar({
   onSelectCounty,
   selectedType = 'Alla',
   onSelectType,
+  selectedDate = '',
+  dateRange = null,
   searchTerm = '',
   onSearchChange,
   onResetFilters,
@@ -75,9 +77,15 @@ export default function Sidebar({
     return ['Alla typer', ...sorted];
   }, [incidents, allIncidents]);
 
+  const todayStr = formatDate(new Date());
+  const isDateFiltered = dateRange
+    ? dateRange.startDate !== todayStr || dateRange.endDate !== todayStr
+    : selectedDate && selectedDate !== todayStr;
+
   const isFiltered =
     (selectedCounty && selectedCounty !== 'Alla') ||
     (selectedType && selectedType !== 'Alla') ||
+    isDateFiltered ||
     Boolean(searchTerm.trim());
 
   const isDark = theme === 'dark';

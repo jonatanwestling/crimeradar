@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CrimeMap from './components/map/CrimeMap';
 import Sidebar from './components/sidebar/Sidebar';
+import DateBar from './components/datebar/DateBar';
 import { incidentsToGeoJSON } from './utils/geojson';
-import { fetchIncidents } from './api/incidents';
+import { fetchIncidents, formatDate } from './api/incidents';
 
 const MAP_STYLES = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -13,6 +14,10 @@ export default function App() {
   const [incidents, setIncidents] = useState([]);
   const [selectedCounty, setSelectedCounty] = useState('Alla');
   const [selectedType, setSelectedType] = useState('Alla');
+  const [dateRange, setDateRange] = useState(() => {
+    const today = formatDate(new Date());
+    return { startDate: today, endDate: today };
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -31,13 +36,15 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Fetch incidents from backend when county or incident type filter changes
+  // Fetch incidents from backend when date range, county or incident type filter changes
   useEffect(() => {
     let mounted = true;
     async function loadData() {
       setLoading(true);
       try {
         const data = await fetchIncidents({
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
           county: selectedCounty === 'Alla' ? null : selectedCounty,
           incidentType: selectedType === 'Alla' ? null : selectedType,
         });
@@ -56,7 +63,7 @@ export default function App() {
     return () => {
       mounted = false;
     };
-  }, [selectedCounty, selectedType]);
+  }, [dateRange, selectedCounty, selectedType]);
 
   // Filter incidents based on free text search term
   const filteredIncidents = useMemo(() => {
@@ -84,6 +91,8 @@ export default function App() {
   const handleResetFilters = useCallback(() => {
     setSelectedCounty('Alla');
     setSelectedType('Alla');
+    const today = formatDate(new Date());
+    setDateRange({ startDate: today, endDate: today });
     setSearchTerm('');
   }, []);
 
@@ -117,6 +126,12 @@ export default function App() {
         onSelectCounty={setSelectedCounty}
         selectedType={selectedType}
         onSelectType={setSelectedType}
+        dateRange={dateRange}
+        selectedDate={
+          dateRange.startDate === dateRange.endDate
+            ? dateRange.startDate
+            : `${dateRange.startDate} - ${dateRange.endDate}`
+        }
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onResetFilters={handleResetFilters}
@@ -127,6 +142,14 @@ export default function App() {
         onToggleOpen={() => setSidebarOpen((prev) => !prev)}
         selectedIncidentId={selectedIncident?.properties?.id}
         onSelectIncident={handleSelectIncidentFromFeed}
+      />
+
+      {/* Floating Bottom Date Navigation Bar */}
+      <DateBar
+        startDate={dateRange.startDate}
+        endDate={dateRange.endDate}
+        onChangeRange={setDateRange}
+        loading={loading}
       />
 
       {/* Main Interactive Map with Liquid Glass Elements */}
