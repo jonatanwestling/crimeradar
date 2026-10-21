@@ -208,8 +208,26 @@ const API_BASE_URL =
 /**
  * Filter fallback data offline when backend is not accessible.
  */
-function filterFallbackIncidents({ county, incidentType }) {
+function filterFallbackIncidents({
+  county,
+  incidentType,
+  startDate,
+  endDate,
+}) {
   let list = FALLBACK_INCIDENTS;
+
+  if (startDate && endDate) {
+    const s = formatDate(startDate);
+    const e = formatDate(endDate);
+    const dateFiltered = list.filter((i) => {
+      if (!i.datetime) return true;
+      const d = i.datetime.slice(0, 10);
+      return d >= s && d <= e;
+    });
+    if (dateFiltered.length > 0) {
+      list = dateFiltered;
+    }
+  }
 
   if (county && county !== "Alla" && county !== "Alla län") {
     const q = county.toLowerCase().replace(/ län$/i, "").trim();
@@ -257,6 +275,128 @@ export function formatDate(date = new Date()) {
 }
 
 /**
+ * Shifts a 'YYYY-MM-DD' date string by offsetDays (+1 for tomorrow, -1 for yesterday).
+ *
+ * @param {string|Date} dateStr - Input date string or Date object
+ * @param {number} [offsetDays=0] - Number of days to offset
+ * @returns {string} Formatted 'YYYY-MM-DD'
+ */
+export function shiftDate(dateStr, offsetDays = 0) {
+  const formatted = formatDate(dateStr) || formatDate(new Date());
+  const [y, m, d] = formatted.split("-").map(Number);
+  const target = new Date(y, m - 1, d);
+  target.setDate(target.getDate() + offsetDays);
+  return formatDate(target);
+}
+
+/**
+ * Calculates the number of days between two 'YYYY-MM-DD' dates (inclusive).
+ *
+ * @param {string|Date} startDate
+ * @param {string|Date} endDate
+ * @returns {number} Number of days
+ */
+export function calculateDaySpan(startDate, endDate) {
+  const start = formatDate(startDate) || formatDate(new Date());
+  const end = formatDate(endDate) || start;
+  const [y1, m1, d1] = start.split("-").map(Number);
+  const [y2, m2, d2] = end.split("-").map(Number);
+  const date1 = new Date(y1, m1 - 1, d1);
+  const date2 = new Date(y2, m2 - 1, d2);
+  const diffTime = date2.getTime() - date1.getTime();
+  return Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+}
+
+/**
+ * Formats a date range ('YYYY-MM-DD' to 'YYYY-MM-DD') into a friendly Swedish label.
+ * Single day: "Idag, 21 okt." / "14 okt. 2026"
+ * Span: "14 – 21 okt. (8 dgr)" / "28 sep. – 4 okt. (7 dgr)"
+ *
+ * @param {string|Date} startDate
+ * @param {string|Date} endDate
+ * @returns {string} Formatted range label
+ */
+export function formatDisplayRange(startDate, endDate) {
+  const start = formatDate(startDate) || formatDate(new Date());
+  const end = formatDate(endDate) || start;
+
+  if (start === end) {
+    return formatDisplayDate(start);
+  }
+
+  const [y1, m1, d1] = start.split("-").map(Number);
+  const [y2, m2, d2] = end.split("-").map(Number);
+  const date1 = new Date(y1, m1 - 1, d1);
+  const date2 = new Date(y2, m2 - 1, d2);
+  const daySpan = calculateDaySpan(start, end);
+
+  // If in the same year and same month
+  if (y1 === y2 && m1 === m2) {
+    const monthName = date1.toLocaleDateString("sv-SE", { month: "short" });
+    return `${d1}–${d2} ${monthName} (${daySpan} dgr)`;
+  }
+
+  // If in the same year, different month
+  if (y1 === y2) {
+    const m1Name = date1.toLocaleDateString("sv-SE", { month: "short" });
+    const m2Name = date2.toLocaleDateString("sv-SE", { month: "short" });
+    return `${d1} ${m1Name} – ${d2} ${m2Name} (${daySpan} dgr)`;
+  }
+
+  // Different year
+  const s1 = date1.toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const s2 = date2.toLocaleDateString("sv-SE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return `${s1} – ${s2} (${daySpan} dgr)`;
+}
+
+/**
+ * Formats a 'YYYY-MM-DD' string into a friendly Swedish string:
+ * "Idag, 21 okt." / "Igår, 20 okt." / "ons 14 okt. 2026"
+ *
+ * @param {string|Date} dateStr - Input date
+ * @returns {string} Friendly label
+ */
+export function formatDisplayDate(dateStr) {
+  const formatted = formatDate(dateStr) || formatDate(new Date());
+  const todayStr = formatDate(new Date());
+  const yesterdayStr = shiftDate(todayStr, -1);
+
+  const [y, m, d] = formatted.split("-").map(Number);
+  const dateObj = new Date(y, m - 1, d);
+
+  if (formatted === todayStr) {
+    const dayMonth = dateObj.toLocaleDateString("sv-SE", {
+      day: "numeric",
+      month: "short",
+    });
+    return `Idag, ${dayMonth}`;
+  }
+
+  if (formatted === yesterdayStr) {
+    const dayMonth = dateObj.toLocaleDateString("sv-SE", {
+      day: "numeric",
+      month: "short",
+    });
+    return `Igår, ${dayMonth}`;
+  }
+
+  return dateObj.toLocaleDateString("sv-SE", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/**
  * Fetch incidents for a specific date range from the backend API.
  * Falls back to sample data if backend is unreachable or still in development.
  *
@@ -301,7 +441,10 @@ export async function fetchIncidentsByDateRange(
       "Backend API not available, using fallback incident data:",
       error.message,
     );
-    return filterFallbackIncidents({});
+    return filterFallbackIncidents({
+      startDate: formattedStart,
+      endDate: formattedEnd,
+    });
   }
 }
 
@@ -352,7 +495,11 @@ export async function fetchCountyIncidents(
       `Backend API /incidents/county not available, using fallback:`,
       error.message,
     );
-    return filterFallbackIncidents({ county });
+    return filterFallbackIncidents({
+      county,
+      startDate: formattedStart,
+      endDate: formattedEnd,
+    });
   }
 }
 
@@ -403,7 +550,11 @@ export async function fetchIncidentsByType(
       `Backend API /incidents/national/type not available, using fallback:`,
       error.message,
     );
-    return filterFallbackIncidents({ incidentType });
+    return filterFallbackIncidents({
+      incidentType,
+      startDate: formattedStart,
+      endDate: formattedEnd,
+    });
   }
 }
 
