@@ -11,8 +11,10 @@ const MAP_STYLES = {
 
 export default function App() {
   const [incidents, setIncidents] = useState([]);
+  const [selectedCounty, setSelectedCounty] = useState('Alla');
   const [selectedType, setSelectedType] = useState('Alla');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState(null);
 
@@ -29,37 +31,46 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Fetch incidents on mount
+  // Fetch incidents from backend when county or incident type filter changes
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      const data = await fetchIncidents();
-      if (mounted) {
-        setIncidents(data);
+      setLoading(true);
+      try {
+        const data = await fetchIncidents({
+          county: selectedCounty === 'Alla' ? null : selectedCounty,
+          incidentType: selectedType === 'Alla' ? null : selectedType,
+        });
+        if (mounted) {
+          setIncidents(data);
+        }
+      } catch (err) {
+        console.error('Failed to load incidents:', err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
     loadData();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [selectedCounty, selectedType]);
 
-  // Filter incidents based on search term and selected type
+  // Filter incidents based on free text search term
   const filteredIncidents = useMemo(() => {
+    if (!searchTerm.trim()) return incidents;
+    const query = searchTerm.toLowerCase().trim();
     return incidents.filter((incident) => {
-      const matchesType =
-        selectedType === 'Alla' || incident.type === selectedType;
-
-      const query = searchTerm.toLowerCase().trim();
-      const matchesSearch =
-        !query ||
+      return (
         incident.name?.toLowerCase().includes(query) ||
         incident.location_name?.toLowerCase().includes(query) ||
-        incident.summary?.toLowerCase().includes(query);
-
-      return matchesType && matchesSearch;
+        incident.summary?.toLowerCase().includes(query) ||
+        incident.type?.toLowerCase().includes(query)
+      );
     });
-  }, [incidents, selectedType, searchTerm]);
+  }, [incidents, searchTerm]);
 
   // Convert filtered incidents to GeoJSON for MapLibre
   const geojson = useMemo(() => {
@@ -69,6 +80,12 @@ export default function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  const handleResetFilters = useCallback(() => {
+    setSelectedCounty('Alla');
+    setSelectedType('Alla');
+    setSearchTerm('');
+  }, []);
 
   const handleSelectIncidentFromFeed = useCallback((incident) => {
     if (!incident) {
@@ -96,10 +113,14 @@ export default function App() {
       <Sidebar
         incidents={filteredIncidents}
         allIncidents={incidents}
+        selectedCounty={selectedCounty}
+        onSelectCounty={setSelectedCounty}
         selectedType={selectedType}
         onSelectType={setSelectedType}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        onResetFilters={handleResetFilters}
+        loading={loading}
         theme={theme}
         onToggleTheme={toggleTheme}
         isOpen={sidebarOpen}

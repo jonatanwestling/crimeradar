@@ -114,9 +114,119 @@ export const FALLBACK_INCIDENTS = [
   },
 ];
 
+export const SWEDISH_COUNTIES = [
+  { id: "Blekinge", name: "Blekinge län" },
+  { id: "Dalarna", name: "Dalarnas län" },
+  { id: "Gotland", name: "Gotlands län" },
+  { id: "Gävleborg", name: "Gävleborgs län" },
+  { id: "Halland", name: "Hallands län" },
+  { id: "Jämtland", name: "Jämtlands län" },
+  { id: "Jönköping", name: "Jönköpings län" },
+  { id: "Kalmar", name: "Kalmar län" },
+  { id: "Kronoberg", name: "Kronobergs län" },
+  { id: "Norrbotten", name: "Norrbottens län" },
+  { id: "Skåne", name: "Skåne län" },
+  { id: "Stockholm", name: "Stockholms län" },
+  { id: "Södermanland", name: "Södermanlands län" },
+  { id: "Uppsala", name: "Uppsala län" },
+  { id: "Värmland", name: "Värmlands län" },
+  { id: "Västerbotten", name: "Västerbottens län" },
+  { id: "Västernorrland", name: "Västernorrlands län" },
+  { id: "Västmanland", name: "Västmanlands län" },
+  { id: "Västra Götaland", name: "Västra Götalands län" },
+  { id: "Örebro", name: "Örebro län" },
+  { id: "Östergötland", name: "Östergötlands län" },
+];
+
+export const INCIDENT_TYPES = [
+  "Anträffad död",
+  "Arbetsplatsolycka",
+  "Bedrägeri",
+  "Brand",
+  "Bråk",
+  "Djur",
+  "Farligt föremål, misstänkt",
+  "Fylleri",
+  "Försvunnen person",
+  "Hemfridsbrott",
+  "Hets mot folkgrupp",
+  "Häleri",
+  "Inbrott",
+  "Information",
+  "Knivlagen",
+  "Kontroll",
+  "Lagen om hundar och katter",
+  "Larm Överfall",
+  "Luftfartslagen",
+  "Missbruk av urkund",
+  "Misshandel",
+  "Misshandel, grov",
+  "Mord/dråp",
+  "Mord/dråp, försök",
+  "Mordbrand",
+  "Motorfordon, anträffat stulet",
+  "Motorfordon, stöld",
+  "Narkotikabrott",
+  "Ofredande/förargelse",
+  "Olaga hot",
+  "Olaga intrång",
+  "Olovlig körning",
+  "Ordningslagen",
+  "Polisinsats/kommendering",
+  "Rattfylleri",
+  "Rån",
+  "Räddningsinsats",
+  "Sammanfattning kväll och natt",
+  "Sammanfattning natt",
+  "Sexualbrott",
+  "Skadegörelse",
+  "Skyddslagen",
+  "Smällar",
+  "Stöld",
+  "Stöld, försök",
+  "Stöld/inbrott",
+  "Trafikbrott",
+  "Trafikhinder",
+  "Trafikkontroll",
+  "Trafikolycka",
+  "Trafikolycka, personskada",
+  "Trafikolycka, singel",
+  "Trafikolycka, smitning från",
+  "Trafikolycka, vilt",
+  "Utlänningslagen",
+  "Vapenlagen",
+  "Våld/hot mot tjänsteman",
+  "Våldtäkt",
+  "Vållande till kroppsskada",
+  "Övrigt",
+];
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? "http://localhost:8000" : "");
+  import.meta.env?.VITE_API_URL ??
+  (import.meta.env?.DEV ? "http://localhost:8000" : "");
+
+/**
+ * Filter fallback data offline when backend is not accessible.
+ */
+function filterFallbackIncidents({ county, incidentType }) {
+  let list = FALLBACK_INCIDENTS;
+
+  if (county && county !== "Alla" && county !== "Alla län") {
+    const q = county.toLowerCase().replace(/ län$/i, "").trim();
+    list = list.filter((i) =>
+      (i.location_name || "").toLowerCase().includes(q)
+    );
+  }
+
+  if (incidentType && incidentType !== "Alla" && incidentType !== "Alla typer") {
+    const q = incidentType.toLowerCase().trim();
+    list = list.filter((i) =>
+      (i.type || "").toLowerCase().includes(q)
+    );
+  }
+
+  return list;
+}
 
 /**
  * Formats a Date object or date string into 'YYYY-MM-DD' (local calendar date).
@@ -162,7 +272,7 @@ export async function fetchIncidentsByDateRange(
   const formattedEnd = formatDate(endDate) || formattedStart;
 
   console.log(
-    `[CrimeRadar] Fetching incidents for: ${formattedStart} -> ${formattedEnd}`,
+    `[CrimeRadar] Fetching national incidents for: ${formattedStart} -> ${formattedEnd}`,
   );
 
   try {
@@ -182,7 +292,7 @@ export async function fetchIncidentsByDateRange(
     const data = await res.json();
     console.log("[CrimeRadar] API response data:", data);
 
-    if (Array.isArray(data) && data.length > 0) {
+    if (Array.isArray(data)) {
       return data;
     }
     return FALLBACK_INCIDENTS;
@@ -191,7 +301,109 @@ export async function fetchIncidentsByDateRange(
       "Backend API not available, using fallback incident data:",
       error.message,
     );
-    return FALLBACK_INCIDENTS;
+    return filterFallbackIncidents({});
+  }
+}
+
+/**
+ * Fetch incidents for a specific county from the backend API.
+ *
+ * @param {string} county - County name (e.g. 'Stockholm', 'Skåne')
+ * @param {Date|string} [startDate=new Date()]
+ * @param {Date|string} [endDate=startDate]
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchCountyIncidents(
+  county,
+  startDate = new Date(),
+  endDate = startDate,
+) {
+  const formattedStart = formatDate(startDate) || formatDate(new Date());
+  const formattedEnd = formatDate(endDate) || formattedStart;
+
+  console.log(
+    `[CrimeRadar] Fetching incidents for county "${county}": ${formattedStart} -> ${formattedEnd}`,
+  );
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/incidents/county`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        county,
+        start_date: formattedStart,
+        end_date: formattedEnd,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log(`[CrimeRadar] /incidents/county response (${data.length} items):`, data);
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return [];
+  } catch (error) {
+    console.warn(
+      `Backend API /incidents/county not available, using fallback:`,
+      error.message,
+    );
+    return filterFallbackIncidents({ county });
+  }
+}
+
+/**
+ * Fetch incidents for a specific incident type nationwide from the backend API.
+ *
+ * @param {string} incidentType - Incident type (e.g. 'Stöld', 'Trafikolycka')
+ * @param {Date|string} [startDate=new Date()]
+ * @param {Date|string} [endDate=startDate]
+ * @returns {Promise<Array>} List of incidents
+ */
+export async function fetchIncidentsByType(
+  incidentType,
+  startDate = new Date(),
+  endDate = startDate,
+) {
+  const formattedStart = formatDate(startDate) || formatDate(new Date());
+  const formattedEnd = formatDate(endDate) || formattedStart;
+
+  console.log(
+    `[CrimeRadar] Fetching incidents for type "${incidentType}": ${formattedStart} -> ${formattedEnd}`,
+  );
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/incidents/national/type`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        incident_type: incidentType,
+        start_date: formattedStart,
+        end_date: formattedEnd,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log(`[CrimeRadar] /incidents/national/type response (${data.length} items):`, data);
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return [];
+  } catch (error) {
+    console.warn(
+      `Backend API /incidents/national/type not available, using fallback:`,
+      error.message,
+    );
+    return filterFallbackIncidents({ incidentType });
   }
 }
 
@@ -220,7 +432,7 @@ export async function fetchTodayIncidents() {
  * - No arguments: fetches today's incidents (fetchIncidents())
  * - Single date: fetches for that specific date (fetchIncidents('2026-10-14') or fetchIncidents(new Date()))
  * - Date range: fetches between start and end (fetchIncidents('2026-10-01', '2026-10-14'))
- * - Options object: fetchIncidents({ startDate, endDate }) or fetchIncidents({ date })
+ * - Options object: fetchIncidents({ startDate, endDate, county, incidentType, type })
  *
  * @param {Date|string|Object} [startDateOrOptions=new Date()] - Single date, start date, or options object
  * @param {Date|string} [maybeEndDate] - Optional end date if first arg is start date
@@ -235,10 +447,44 @@ export async function fetchIncidents(
     typeof startDateOrOptions === "object" &&
     !(startDateOrOptions instanceof Date)
   ) {
-    const { startDate, endDate, start_date, end_date, date } =
-      startDateOrOptions;
+    const {
+      startDate,
+      endDate,
+      start_date,
+      end_date,
+      date,
+      county,
+      incidentType,
+      type,
+    } = startDateOrOptions;
+
     const start = startDate || start_date || date || new Date();
     const end = endDate || end_date || start;
+
+    const hasCounty =
+      county && county !== "Alla" && county !== "Alla län";
+    const selectedType = incidentType || type;
+    const hasType =
+      selectedType && selectedType !== "Alla" && selectedType !== "Alla typer";
+
+    // If both county and type are selected:
+    // Query county endpoint, and filter returned list by type client-side
+    if (hasCounty && hasType) {
+      const countyData = await fetchCountyIncidents(county, start, end);
+      const q = selectedType.toLowerCase();
+      return countyData.filter((i) =>
+        (i.type || "").toLowerCase().includes(q),
+      );
+    }
+
+    if (hasCounty) {
+      return fetchCountyIncidents(county, start, end);
+    }
+
+    if (hasType) {
+      return fetchIncidentsByType(selectedType, start, end);
+    }
+
     return fetchIncidentsByDateRange(start, end);
   }
 
