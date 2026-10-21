@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import CrimeMap from './components/map/CrimeMap';
 import Sidebar from './components/sidebar/Sidebar';
 import McpModal from './components/mcp/McpModal';
+import DateBar from './components/datebar/DateBar';
 import { incidentsToGeoJSON } from './utils/geojson';
-import { fetchIncidents } from './api/incidents';
+import { fetchIncidents, formatDate } from './api/incidents';
 
 const MAP_STYLES = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -12,8 +13,14 @@ const MAP_STYLES = {
 
 export default function App() {
   const [incidents, setIncidents] = useState([]);
+  const [selectedCounty, setSelectedCounty] = useState('Alla');
   const [selectedType, setSelectedType] = useState('Alla');
+  const [dateRange, setDateRange] = useState(() => {
+    const today = formatDate(new Date());
+    return { startDate: today, endDate: today };
+  });
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [mcpModalOpen, setMcpModalOpen] = useState(false);
@@ -31,37 +38,48 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Fetch incidents on mount
+  // Fetch incidents from backend when date range, county or incident type filter changes
   useEffect(() => {
     let mounted = true;
     async function loadData() {
-      const data = await fetchIncidents();
-      if (mounted) {
-        setIncidents(data);
+      setLoading(true);
+      try {
+        const data = await fetchIncidents({
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
+          county: selectedCounty === 'Alla' ? null : selectedCounty,
+          incidentType: selectedType === 'Alla' ? null : selectedType,
+        });
+        if (mounted) {
+          setIncidents(data);
+        }
+      } catch (err) {
+        console.error('Failed to load incidents:', err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
     loadData();
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [dateRange, selectedCounty, selectedType]);
 
-  // Filter incidents based on search term and selected type
+  // Filter incidents based on free text search term
   const filteredIncidents = useMemo(() => {
+    if (!searchTerm.trim()) return incidents;
+    const query = searchTerm.toLowerCase().trim();
     return incidents.filter((incident) => {
-      const matchesType =
-        selectedType === 'Alla' || incident.type === selectedType;
-
-      const query = searchTerm.toLowerCase().trim();
-      const matchesSearch =
-        !query ||
+      return (
         incident.name?.toLowerCase().includes(query) ||
         incident.location_name?.toLowerCase().includes(query) ||
-        incident.summary?.toLowerCase().includes(query);
-
-      return matchesType && matchesSearch;
+        incident.summary?.toLowerCase().includes(query) ||
+        incident.type?.toLowerCase().includes(query)
+      );
     });
-  }, [incidents, selectedType, searchTerm]);
+  }, [incidents, searchTerm]);
 
   // Convert filtered incidents to GeoJSON for MapLibre
   const geojson = useMemo(() => {
@@ -71,6 +89,14 @@ export default function App() {
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
+
+  const handleResetFilters = useCallback(() => {
+    setSelectedCounty('Alla');
+    setSelectedType('Alla');
+    const today = formatDate(new Date());
+    setDateRange({ startDate: today, endDate: today });
+    setSearchTerm('');
+  }, []);
 
   const handleSelectIncidentFromFeed = useCallback((incident) => {
     if (!incident) {
@@ -98,10 +124,20 @@ export default function App() {
       <Sidebar
         incidents={filteredIncidents}
         allIncidents={incidents}
+        selectedCounty={selectedCounty}
+        onSelectCounty={setSelectedCounty}
         selectedType={selectedType}
         onSelectType={setSelectedType}
+        dateRange={dateRange}
+        selectedDate={
+          dateRange.startDate === dateRange.endDate
+            ? dateRange.startDate
+            : `${dateRange.startDate} - ${dateRange.endDate}`
+        }
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        onResetFilters={handleResetFilters}
+        loading={loading}
         theme={theme}
         onToggleTheme={toggleTheme}
         isOpen={sidebarOpen}
@@ -109,6 +145,14 @@ export default function App() {
         selectedIncidentId={selectedIncident?.properties?.id}
         onSelectIncident={handleSelectIncidentFromFeed}
         onOpenMcp={() => setMcpModalOpen(true)}
+      />
+
+      {/* Floating Bottom Date Navigation Bar */}
+      <DateBar
+        startDate={dateRange.startDate}
+        endDate={dateRange.endDate}
+        onChangeRange={setDateRange}
+        loading={loading}
       />
 
       {/* Main Interactive Map with Liquid Glass Elements */}

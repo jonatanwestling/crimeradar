@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { SWEDISH_COUNTIES, INCIDENT_TYPES, formatDate } from '../../api/incidents';
 
 /**
  * Minimalist neutral incident category styling (no blue tint, no heavy glow)
@@ -43,10 +44,16 @@ function getIncidentTypeStyle(type, isDark) {
 export default function Sidebar({
   incidents = [],
   allIncidents = [],
+  selectedCounty = 'Alla',
+  onSelectCounty,
   selectedType = 'Alla',
   onSelectType,
+  selectedDate = '',
+  dateRange = null,
   searchTerm = '',
   onSearchChange,
+  onResetFilters,
+  loading = false,
   theme = 'dark',
   onToggleTheme,
   isOpen = true,
@@ -55,11 +62,32 @@ export default function Sidebar({
   onSelectIncident,
   onOpenMcp
 }) {
+  const countyList = useMemo(() => {
+    return [
+      { id: 'Alla', name: 'Alla län (Hela Sverige)' },
+      ...SWEDISH_COUNTIES
+    ];
+  }, []);
+
   const incidentTypes = useMemo(() => {
-    const list = allIncidents.length > 0 ? allIncidents : incidents;
-    const set = new Set(list.map((i) => i.type).filter(Boolean));
-    return ['Alla typer', ...Array.from(set).sort()];
+    const set = new Set(INCIDENT_TYPES);
+    (allIncidents.length > 0 ? allIncidents : incidents).forEach((i) => {
+      if (i.type) set.add(i.type);
+    });
+    const sorted = Array.from(set).sort((a, b) => a.localeCompare(b, 'sv'));
+    return ['Alla typer', ...sorted];
   }, [incidents, allIncidents]);
+
+  const todayStr = formatDate(new Date());
+  const isDateFiltered = dateRange
+    ? dateRange.startDate !== todayStr || dateRange.endDate !== todayStr
+    : selectedDate && selectedDate !== todayStr;
+
+  const isFiltered =
+    (selectedCounty && selectedCounty !== 'Alla') ||
+    (selectedType && selectedType !== 'Alla') ||
+    isDateFiltered ||
+    Boolean(searchTerm.trim());
 
   const isDark = theme === 'dark';
 
@@ -275,12 +303,45 @@ export default function Sidebar({
               )}
             </div>
 
+            {/* County Select */}
+            <div className="clean-frosted-select-wrapper">
+              <select
+                value={selectedCounty}
+                onChange={(e) => onSelectCounty && onSelectCounty(e.target.value)}
+                className="clean-frosted-select"
+                aria-label="Filtrera efter län"
+              >
+                {countyList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <span
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none',
+                  color: 'var(--text-dim)',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </span>
+            </div>
+
             {/* Type Select */}
             <div className="clean-frosted-select-wrapper">
               <select
                 value={selectedType}
-                onChange={(e) => onSelectType(e.target.value)}
+                onChange={(e) => onSelectType && onSelectType(e.target.value)}
                 className="clean-frosted-select"
+                aria-label="Filtrera efter händelsetyp"
               >
                 {incidentTypes.map((t) => (
                   <option key={t} value={t === 'Alla typer' ? 'Alla' : t}>
@@ -317,14 +378,47 @@ export default function Sidebar({
                 color: 'var(--text-dim)'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{incidents.length}</span>
-                <span>{incidents.length === 1 ? 'HÄNDELSE' : 'HÄNDELSER'}</span>
-              </div>
-              {selectedType !== 'Alla' && (
-                <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  FILTER AKTIVT
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                  {loading ? '...' : incidents.length}
                 </span>
+                <span>{incidents.length === 1 ? 'HÄNDELSE' : 'HÄNDELSER'}</span>
+                {loading && (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      color: 'var(--text-dim)',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    (laddar...)
+                  </span>
+                )}
+              </div>
+              {isFiltered && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    FILTER AKTIVT
+                  </span>
+                  {onResetFilters && (
+                    <button
+                      onClick={onResetFilters}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-dim)',
+                        cursor: 'pointer',
+                        padding: '1px 3px',
+                        fontSize: '10px',
+                        textDecoration: 'underline',
+                        fontFamily: 'inherit'
+                      }}
+                      title="Nollställ alla filter"
+                    >
+                      Rensa
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -338,7 +432,7 @@ export default function Sidebar({
               padding: '8px 12px'
             }}
           >
-            {incidents.length === 0 ? (
+            {loading && incidents.length === 0 ? (
               <div
                 style={{
                   padding: '36px 16px',
@@ -347,7 +441,18 @@ export default function Sidebar({
                   fontSize: '12px'
                 }}
               >
-                Inga händelser hittades.
+                Hämtar händelser...
+              </div>
+            ) : incidents.length === 0 ? (
+              <div
+                style={{
+                  padding: '36px 16px',
+                  textAlign: 'center',
+                  color: 'var(--text-dim)',
+                  fontSize: '12px'
+                }}
+              >
+                Inga händelser hittades för valt filter.
               </div>
             ) : (
               incidents.map((incident) => {

@@ -492,3 +492,368 @@ body,
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ==========================================================================
+   Clean Frosted Bottom Bar (Date Filtering)
+   ========================================================================== */
+
+.clean-frosted-bottom-bar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.2s ease, opacity 0.2s ease, background 0.15s ease;
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .clean-frosted-bottom-bar {
+    bottom: 16px;
+    padding: 5px 8px;
+    gap: 6px;
+    max-width: calc(100vw - 32px);
+  }
+}
+
+.clean-frosted-date-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  background: var(--glass-input-bg);
+  border: 1px solid var(--glass-input-border);
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.clean-frosted-date-badge:hover,
+.clean-frosted-date-badge:focus-visible,
+.clean-frosted-date-badge.is-active {
+  background: var(--glass-card-hover);
+  border-color: var(--glass-border-hover);
+}
+
+.clean-frosted-date-badge.is-active {
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.clean-frosted-date-badge:focus-visible {
+  box-shadow: var(--glass-input-focus);
+}
+
+.clean-frosted-date-text {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.clean-frosted-date-native-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.clean-frosted-btn.is-disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.clean-frosted-pill-btn {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 9999px;
+  background: var(--glass-card-bg);
+  color: var(--text-main);
+  border: 1px solid var(--glass-border-subtle);
+  cursor: pointer;
+}
+
+.clean-frosted-pill-btn:hover {
+  background: var(--glass-card-hover);
+  border-color: var(--glass-border-hover);
+}
+
+/* ==========================================================================
+   Clean Frosted Date Range Picker Popover
+   ========================================================================== */
+
+.clean-frosted-date-picker-popover {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 324px;
+  max-width: calc(100vw - 24px);
+  background: var(--glass-base);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  padding: 14px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  animation: datePickerSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+@keyframes datePickerSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.clean-date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.clean-date-picker-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clean-date-picker-month-title {
+  font-family: var(--sans);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  min-width: 130px;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.clean-date-picker-close-btn {
+  width: 26px;
+  height: 26px;
+}
+
+/* Quick range presets scroll/wrap */
+.clean-date-presets-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+  scrollbar-width: none;
+}
+.clean-date-presets-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.clean-date-preset-pill {
+  flex-shrink: 0;
+  padding: 4px 9px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: var(--glass-card-bg);
+  border: 1px solid var(--glass-border-subtle);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.clean-date-preset-pill:hover {
+  background: var(--glass-card-hover);
+  color: var(--text-main);
+  border-color: var(--glass-border-hover);
+}
+
+.clean-date-preset-pill.is-active {
+  background: var(--radar-green);
+  color: #09090b;
+  border-color: var(--radar-green);
+  font-weight: 700;
+}
+
+/* Weekday header */
+.clean-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-top: 1px;
+}
+
+.clean-calendar-weekday-cell {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 2px 0;
+  letter-spacing: 0.05em;
+}
+
+/* 7-column calendar grid */
+.clean-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 3px;
+}
+
+.clean-calendar-day-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+  padding: 0;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.clean-calendar-day-btn:hover:not(.is-future-disabled):not(.is-range-start):not(.is-range-end):not(.is-range-single) {
+  background: var(--glass-card-hover);
+  border-radius: 7px;
+}
+
+.clean-calendar-day-btn.is-other-month {
+  opacity: 0.22;
+}
+
+.clean-calendar-day-btn.is-future-disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.clean-calendar-day-btn.is-range-single {
+  background: var(--radar-green) !important;
+  color: #09090b !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+.clean-calendar-day-btn.is-range-start {
+  background: var(--radar-green) !important;
+  color: #09090b !important;
+  font-weight: 700 !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.clean-calendar-day-btn.is-range-end {
+  background: var(--radar-green) !important;
+  color: #09090b !important;
+  font-weight: 700 !important;
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.clean-calendar-day-btn.is-in-range {
+  background: rgba(34, 197, 94, 0.18) !important;
+  color: var(--text-main) !important;
+  border-radius: 0 !important;
+}
+
+.clean-today-dot {
+  position: absolute;
+  bottom: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--radar-green);
+}
+
+/* Footer & Controls */
+.clean-date-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 9px;
+  border-top: 1px solid var(--glass-border-subtle);
+  margin-top: 2px;
+}
+
+.clean-date-picker-summary {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clean-picking-helper {
+  color: var(--radar-green);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.clean-selected-range-text {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.clean-date-picker-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.clean-date-confirm-btn {
+  padding: 4px 12px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: var(--radar-green);
+  color: #09090b;
+  border: 1px solid var(--radar-green);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease;
+}
+
+.clean-date-confirm-btn:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
